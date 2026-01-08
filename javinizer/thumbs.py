@@ -61,11 +61,24 @@ class ActressDB:
                         continue
 
                     aliases = [a.strip() for a in row.get('aliases', '').split('|') if a.strip()]
+                    
+                    # Handle local path - resolve relative to absolute
+                    local_path = row.get('local_path')
+                    if local_path:
+                        # Fix windows backslashes
+                        local_path = local_path.replace('\\', '/')
+                        try:
+                            local_path_obj = Path(local_path)
+                            if not local_path_obj.is_absolute():
+                                local_path = str(self.storage_path / local_path)
+                        except Exception:
+                            pass
+
                     profile = ActressProfile(
                         name=name,
                         aliases=aliases,
                         image_url=row.get('image_url'),
-                        local_path=row.get('local_path')
+                        local_path=local_path
                     )
                     self.profiles[name.lower()] = profile
 
@@ -89,11 +102,24 @@ class ActressDB:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 for profile in self.profiles.values():
+                    # Save local_path as relative if possible
+                    local_path_str = ''
+                    if profile.local_path:
+                        try:
+                            abs_path = Path(profile.local_path).resolve()
+                            storage_abs = self.storage_path.resolve()
+                            if abs_path.is_relative_to(storage_abs):
+                                local_path_str = str(abs_path.relative_to(storage_abs)).replace('\\', '/')
+                            else:
+                                local_path_str = str(abs_path)
+                        except Exception:
+                            local_path_str = profile.local_path
+
                     writer.writerow({
                         'name': profile.name,
                         'aliases': '|'.join(profile.aliases),
                         'image_url': profile.image_url or '',
-                        'local_path': profile.local_path or ''
+                        'local_path': local_path_str
                     })
         except Exception as e:
             console.print(f"[red]Error saving actress DB: {e}[/]")
@@ -146,7 +172,15 @@ class ActressDB:
         target_file = target_dir / "folder.jpg"
 
         # Check if file exists
+        # Check if file exists
         if target_file.exists():
+            # Auto-repair: Update DB if path was missing or different
+            try:
+                if not profile.local_path or Path(profile.local_path).resolve() != target_file.resolve():
+                    profile.local_path = str(target_file)
+                    self.save()
+            except Exception:
+                pass
             return self._map_path(target_file)
 
         # Download if enabled
