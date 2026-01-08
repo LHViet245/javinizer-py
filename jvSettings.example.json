@@ -49,6 +49,7 @@
   },
   "timeout": 30.0,
   "sleep_between_requests": 1.0,
+  "log_file": null,
   "javlibrary_cookies": {
     "cf_clearance": ""
   },

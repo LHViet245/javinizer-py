@@ -135,6 +135,10 @@ javinizer config set-proxy --disable
 # Đổi format folder/file
 javinizer config set-sort-format --folder "<ID> - <TITLE>"
 javinizer config set-sort-format --file "<ID>"
+
+# Debug error logging
+javinizer find IPX-486 --verbose
+javinizer find IPX-486 --log-file javinizer.log
 ```
 
 ---
@@ -150,6 +154,8 @@ File cấu hình được lưu tại `javinizer-py/jvSettings.json`.
   "scraper_dmm": true,
   "scraper_r18dev": true,
   "scraper_javlibrary": true,
+
+  "log_file": "javinizer.log",
 
   "proxy": {
     "enabled": true,

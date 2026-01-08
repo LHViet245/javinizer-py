@@ -8,6 +8,9 @@ import httpx
 
 from javinizer.models import Actress, MovieMetadata, ProxyConfig, Rating
 from javinizer.scrapers.base import BaseScraper
+from javinizer.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class R18DevScraper(BaseScraper):
@@ -137,7 +140,7 @@ class R18DevScraper(BaseScraper):
             response.raise_for_status()
             data = response.json()
         except Exception as e:
-            print(f"Error fetching R18Dev API: {e}")
+            logger.error(f"Error fetching R18Dev API: {e}", exc_info=True)
             return None
 
         # Handle list response (extract first item)

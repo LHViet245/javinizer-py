@@ -99,6 +99,7 @@ def main():
 
         javinizer config --proxy socks5://127.0.0.1:1080
     """
+    """
     pass
 
 
@@ -112,7 +113,9 @@ def main():
 @click.option("--json", "as_json", is_flag=True, help="Output as JSON")
 @click.option("--no-aggregate", is_flag=True,
               help="Don't aggregate results, use first successful source only")
-def find(movie_id: str, source: str, proxy: Optional[str], nfo: bool, as_json: bool, no_aggregate: bool):
+@click.option("--log-file", help="Path to log file")
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose (debug) logging")
+def find(movie_id: str, source: str, proxy: Optional[str], nfo: bool, as_json: bool, no_aggregate: bool, log_file: Optional[str], verbose: bool):
     """Find metadata for a movie ID
 
     By default, searches all sources (r18dev, javlibrary, dmm) and aggregates results.
@@ -125,14 +128,24 @@ def find(movie_id: str, source: str, proxy: Optional[str], nfo: bool, as_json: b
 
         javinizer find IPX-486 --proxy socks5://127.0.0.1:1080
     """
+    # Load settings first to check for default log file
+    settings = load_settings()
+    
+    # Configure logging
+    # CLI arg > Settings > None
+    final_log_file = log_file or settings.log_file
+    from javinizer.logger import configure_logging, get_logger
+    logger = configure_logging(verbose=verbose, log_file=final_log_file)
+    
+    logger.debug(f"Starting find command for {movie_id}")
+
     # Parse sources and expand aliases (dmm -> [dmm_new, dmm])
     sources = expand_sources([s.strip() for s in source.split(",")])
 
     console.print(f"[bold blue]🔍 Searching for:[/] {movie_id}")
     console.print(f"[dim]Sources: {', '.join(sources)}[/]")
-
-    # Load settings
-    settings = load_settings()
+    if final_log_file:
+         console.print(f"[dim]Logging to: {final_log_file}[/]")
 
     # Override proxy if specified
     if proxy:
@@ -158,19 +171,24 @@ def find(movie_id: str, source: str, proxy: Optional[str], nfo: bool, as_json: b
 
         if scraper is None:
             console.print(f"[yellow]⚠️  Unknown source: {src}[/]")
+            logger.warning(f"Unknown scraper source requested: {src}")
             continue
 
         with scraper:
             try:
                 console.print(f"[dim]Scraping from {src}...[/]", end=" ")
+                logger.debug(f"Scraping {movie_id} from {src}")
                 metadata = scraper.find(movie_id)
                 if metadata:
                     results[src] = metadata
                     console.print(f"[green]✓[/]")
+                    logger.info(f"Found {movie_id} on {src}")
                 else:
                     console.print(f"[yellow]no results[/]")
+                    logger.debug(f"No results for {movie_id} on {src}")
             except Exception as e:
                 console.print(f"[red]error: {e}[/]")
+                logger.error(f"Error scraping {src}: {e}", exc_info=True)
 
     if not results:
         console.print(f"\n[yellow]⚠️  No results found for {movie_id}[/]")

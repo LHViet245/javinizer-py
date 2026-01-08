@@ -7,6 +7,9 @@ import ssl
 import httpx
 
 from javinizer.models import MovieMetadata, ProxyConfig
+from javinizer.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 # Create SSL context that allows legacy renegotiation
@@ -83,7 +86,8 @@ class BaseScraper(ABC):
                         allow_redirects=True,
                     )
                     return self._client
-                except (ImportError, Exception):
+                except (ImportError, Exception) as e:
+                    logger.debug(f"Failed to use curl_cffi: {e}. Falling back to httpx.")
                     use_httpx = True
 
             if use_httpx:

@@ -9,6 +9,9 @@ from bs4 import BeautifulSoup
 
 from javinizer.models import Actress, MovieMetadata, ProxyConfig, Rating
 from javinizer.scrapers.base import BaseScraper
+from javinizer.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class JavlibraryScraper(BaseScraper):
@@ -72,29 +75,20 @@ class JavlibraryScraper(BaseScraper):
 
             # Check for Cloudflare
             if self._check_cloudflare(response):
-                print(
-                    "\n⚠️  Javlibrary is protected by Cloudflare.\n"
-                    "   To use this scraper, you need to:\n"
-                    "   1. Open Javlibrary in a browser and pass the challenge\n"
-                    "   2. Open DevTools (F12) -> Application -> Cookies\n"
-                    "   3. Copy cf_clearance cookie value\n"
-                    "   4. Copy User-Agent from Network tab\n"
-                    "   5. Run: javinizer config set-javlibrary-cookies \\\n"
-                    "          --cf-clearance <value> --user-agent <your-ua>\n"
-                    "   \n"
-                    "   For now, use R18Dev instead: --source r18dev\n"
+                msg = (
+                    "Javlibrary is protected by Cloudflare. "
+                    "You need to provide valid cookies (cf_clearance) using 'javinizer config set-javlibrary-cookies'."
                 )
+                logger.warning(msg)
+                print(f"\n⚠️  {msg}")
                 return None
 
             response.raise_for_status()
         except Exception as e:
             if '403' in str(e):
-                print(
-                    "\n⚠️  Javlibrary returned 403 Forbidden.\n"
-                    "   This is likely Cloudflare protection. Use R18Dev instead: --source r18dev\n"
-                )
+                logger.warning("Javlibrary returned 403 Forbidden (Cloudflare protection likely).")
             else:
-                print(f"Error searching Javlibrary: {e}")
+                logger.error(f"Error searching Javlibrary: {e}", exc_info=True)
             return None
 
         # Check if we got redirected directly to movie page
@@ -133,7 +127,7 @@ class JavlibraryScraper(BaseScraper):
             response = self.client.get(url)
             response.raise_for_status()
         except Exception as e:
-            print(f"Error fetching Javlibrary page: {e}")
+            logger.error(f"Error fetching Javlibrary page: {e}", exc_info=True)
             return None
 
         soup = BeautifulSoup(response.content, "lxml")
@@ -146,7 +140,7 @@ class JavlibraryScraper(BaseScraper):
             ("cf-browser-verification" in html or "Just a moment" in html)
         )
         if is_cf_challenge:
-            print("Warning: Javlibrary Cloudflare challenge detected. Please provide valid cookies.")
+            logger.warning("Javlibrary Cloudflare challenge detected.")
             return None
 
         # Parse metadata

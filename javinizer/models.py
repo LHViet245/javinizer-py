@@ -183,6 +183,7 @@ class Settings(BaseModel):
     # Request settings
     timeout: float = 30.0
     sleep_between_requests: float = 1.0
+    log_file: Optional[str] = None  # Path to log file (default: None for no file logging)
 
     # Javlibrary specific (Cloudflare cookies)
     javlibrary_cookies: dict[str, str] = Field(default_factory=dict)

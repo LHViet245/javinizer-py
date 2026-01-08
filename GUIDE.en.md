@@ -135,6 +135,10 @@ javinizer config set-proxy --disable
 # Change sort format
 javinizer config set-sort-format --folder "<ID> - <TITLE>"
 javinizer config set-sort-format --file "<ID>"
+
+# Debug error logging
+javinizer find IPX-486 --verbose
+javinizer find IPX-486 --log-file javinizer.log
 ```
 
 ---

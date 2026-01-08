@@ -9,6 +9,9 @@ from bs4 import BeautifulSoup, Tag
 
 from javinizer.models import Actress, MovieMetadata, ProxyConfig, Rating
 from javinizer.scrapers.base import BaseScraper
+from javinizer.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class DMMScraper(BaseScraper):
@@ -178,7 +181,7 @@ class DMMScraper(BaseScraper):
                 return None
 
         except Exception as e:
-            print(f"Error fetching {url}: {e}")
+            logger.error(f"Error fetching {url}: {e}", exc_info=True)
             return None
 
         soup = BeautifulSoup(response.content, "lxml")
