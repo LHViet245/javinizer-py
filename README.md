@@ -1,5 +1,7 @@
 # Javinizer Python
 
+[English](README.en.md) | [Tiếng Việt](README.md) | [中文](README.zh.md)
+
 Python port của Javinizer - công cụ scrape và quản lý metadata cho Japanese Adult Video (JAV).
 
 ## Tính năng
