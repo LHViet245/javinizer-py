@@ -1,0 +1,93 @@
+{
+  "scraper_dmm": true,
+  "scraper_r18dev": true,
+  "scraper_javlibrary": false,
+  "priority": {
+    "actress": [
+      "dmm",
+      "javlibrary",
+      "r18dev"
+    ],
+    "title": [
+      "javlibrary",
+      "r18dev",
+      "dmm"
+    ],
+    "cover_url": [
+      "dmm",
+      "r18dev",
+      "javlibrary"
+    ],
+    "description": [
+      "dmm",
+      "r18dev"
+    ],
+    "genre": [
+      "javlibrary",
+      "r18dev",
+      "dmm"
+    ],
+    "release_date": [
+      "r18dev",
+      "javlibrary",
+      "dmm"
+    ],
+    "runtime": [
+      "r18dev",
+      "javlibrary",
+      "dmm"
+    ],
+    "maker": [
+      "javlibrary",
+      "r18dev",
+      "dmm"
+    ]
+  },
+  "proxy": {
+    "enabled": false,
+    "url": "socks5://127.0.0.1:1080"
+  },
+  "timeout": 30.0,
+  "sleep_between_requests": 1.0,
+  "javlibrary_cookies": {
+    "cf_clearance": ""
+  },
+  "javlibrary_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "sort": {
+    "enabled": true,
+    "move_files": true,
+    "create_nfo": true,
+    "download_images": true,
+    "move_subtitles": true,
+    "folder_format": "<ID> [<STUDIO>] - <TITLE> (<YEAR>)",
+    "file_format": "<ID>",
+    "nfo_format": "<ID>",
+    "poster_filename": "cover.jpg",
+    "backdrop_filename": "backdrop.jpg",
+    "max_title_length": 120,
+    "actress_delimiter": ", ",
+    "actress_language_ja": false,
+    "first_name_order": true,
+    "group_actress": true,
+    "min_file_size_mb": 100
+  },
+  "nfo_add_generic_role": true,
+  "nfo_actress_language_ja": false,
+  "thumbs": {
+    "enabled": true,
+    "storage_path": "thumbs",
+    "csv_file": "actresses.csv",
+    "path_mapping": {},
+    "auto_download": true,
+    "download_on_sort": true,
+    "verify_ssl": true
+  },
+  "translation": {
+    "enabled": false,
+    "provider": "google",
+    "target_language": "en",
+    "deepl_api_key": "",
+    "translate_title": true,
+    "translate_description": true
+  }
+}
