@@ -70,6 +70,13 @@ def extract_movie_id(filename: str) -> Optional[str]:
     if carib_match:
         return f"{carib_match.group(1)}-{carib_match.group(2)}"
 
+    # Try special studios: T28-123, S1-123 (Letter + Digits)
+    special_match = re.search(r'\b([a-zA-Z]\d+)[-_]?(\d{2,5})', name, re.IGNORECASE)
+    if special_match:
+        prefix = special_match.group(1).upper()
+        number = special_match.group(2)
+        return f"{prefix}-{number}"
+
     # Try standard JAV pattern (most common)
     # Match: ABC-123, ABC123, SSNI-486, etc.
     standard_match = re.search(r'([a-zA-Z]{2,10})[-_]?(\d{2,5})', name, re.IGNORECASE)
