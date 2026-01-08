@@ -14,7 +14,10 @@ cd javinizer-py
 pip install -e .
 ```
 
-Hoặc chạy file `install.bat` (Windows).
+Hoặc chạy file **`install.bat`** (Windows) và chọn:
+
+- **[1] Standard Install**: Cài đặt thông thường.
+- **[2] Clean Install**: Cài đặt sạch (xoá venv cũ, cache, log) - khuyên dùng khi gặp lỗi lạ.
 
 ### Các gói Python được cài đặt
 
@@ -233,6 +236,8 @@ javinizer config get-javlibrary-cookies
 javinizer config get-javlibrary-cookies --proxy socks5://127.0.0.1:10808
 ```
 
+> 💡 **Mẹo**: Nếu bạn chạy lệnh scrape và bị chặn, tool sẽ **tự động** gợi ý chính xác lệnh cần chạy (bao gồm cả proxy nếu đang cấu hình). Chỉ cần copy-paste lệnh đó là xong!
+
 > ⚠️ **LƯU Ý**: Cookie Cloudflare gắn với IP! Phải dùng cùng proxy khi lấy cookie và khi scrape.
 
 ### Bước 2: Sử dụng
@@ -291,6 +296,8 @@ javinizer-py/
   "download_on_sort": true
 }
 ```
+
+> 🛡️ **Tính năng Portable**: Đường dẫn ảnh được lưu dưới dạng **tương đối** (Relative Path). Bạn có thể copy thư mục `thumbs` sang máy khác hoặc ổ đĩa khác thoải mái. Khi chạy lệnh `update`, tool sẽ tự động sửa lại đường dẫn nếu phát hiện file ảnh có sẵn.
 
 ---
 
