@@ -31,6 +31,7 @@ class DMMScraper(BaseScraper):
         proxy: Optional[ProxyConfig] = None,
         cookies: Optional[dict[str, str]] = None,
         user_agent: Optional[str] = None,
+        verify_ssl: bool = True,
     ):
         # Merge age check cookies with any provided cookies
         all_cookies = {**self.AGE_CHECK_COOKIES, **(cookies or {})}
@@ -39,7 +40,9 @@ class DMMScraper(BaseScraper):
             proxy=proxy,
             cookies=all_cookies,
             user_agent=user_agent,
+            verify_ssl=verify_ssl,
         )
+
 
     @property
     def client(self):
@@ -310,6 +313,7 @@ class DMMScraper(BaseScraper):
     def _parse_actresses(self, soup: BeautifulSoup, html: str) -> list[Actress]:
         """Parse actress information"""
         actresses = []
+        seen_names = set()  # Track unique names
 
         # Find actress links - multiple patterns for different DMM page formats
         patterns = [
@@ -327,6 +331,15 @@ class DMMScraper(BaseScraper):
                     if not name:
                         continue
 
+                    # Skip invalid actress names (promotional text, ads, etc.)
+                    if not self._is_valid_actress_name(name):
+                        continue
+
+                    # Skip duplicates
+                    if name in seen_names:
+                        continue
+                    seen_names.add(name)
+
                     # Check if name is Japanese
                     is_japanese = bool(re.search(r'[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]', name))
 
@@ -338,6 +351,40 @@ class DMMScraper(BaseScraper):
                 break  # Use first pattern that matches
 
         return actresses
+
+    def _is_valid_actress_name(self, name: str) -> bool:
+        """
+        Check if a string is a valid actress name.
+        
+        Filters out promotional text, ads, and other invalid entries.
+        """
+        # Names should be reasonable length (most Japanese names < 20 chars)
+        if len(name) > 30:
+            return False
+        
+        # Skip if contains promotional markers
+        invalid_markers = [
+            '★', '☆', '●', '◆', '■',  # Special markers
+            'ご購入', '商品', 'こちら',  # Purchase/product text
+            'アダルトブック', '写真集',  # Book/photobook promo
+            'http', 'www', '.com', '.jp',  # URLs
+            '限定', '特典', 'キャンペーン',  # Limited/bonus/campaign
+            '配信', 'ダウンロード',  # Distribution/download
+        ]
+        
+        for marker in invalid_markers:
+            if marker in name:
+                return False
+        
+        # Name should contain at least some Japanese or Latin characters
+        # (not just numbers or special characters)
+        has_valid_chars = bool(re.search(r'[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf a-zA-Z]', name))
+
+        if not has_valid_chars:
+            return False
+        
+        return True
+
 
     def _parse_genres(self, html: str) -> list[str]:
         """Parse genre list"""

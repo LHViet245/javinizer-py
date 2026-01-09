@@ -12,15 +12,34 @@ from javinizer.logger import get_logger
 logger = get_logger(__name__)
 
 
-# Create SSL context that allows legacy renegotiation
-SSL_CONTEXT = ssl.create_default_context()
-SSL_CONTEXT.check_hostname = False
-SSL_CONTEXT.verify_mode = ssl.CERT_NONE
-# Try to enable legacy server connect if available
-try:
-    SSL_CONTEXT.options |= 0x4  # SSL_OP_LEGACY_SERVER_CONNECT
-except Exception:
-    pass
+# Legacy SSL context for servers with older TLS configurations
+# Only created when verify_ssl=False is explicitly set
+def _create_legacy_ssl_context() -> ssl.SSLContext:
+    """
+    Create SSL context for legacy servers requiring insecure connections.
+    
+    WARNING: Only use when absolutely necessary (e.g., legacy server endpoints).
+    This disables certificate verification and is vulnerable to MITM attacks.
+    """
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    try:
+        ctx.options |= 0x4  # SSL_OP_LEGACY_SERVER_CONNECT
+    except AttributeError:
+        pass
+    return ctx
+
+# Lazy-initialized legacy context (only created if needed)
+_LEGACY_SSL_CONTEXT: Optional[ssl.SSLContext] = None
+
+def get_legacy_ssl_context() -> ssl.SSLContext:
+    """Get or create the legacy SSL context."""
+    global _LEGACY_SSL_CONTEXT
+    if _LEGACY_SSL_CONTEXT is None:
+        _LEGACY_SSL_CONTEXT = _create_legacy_ssl_context()
+        logger.warning("Using insecure SSL context - certificate verification disabled")
+    return _LEGACY_SSL_CONTEXT
 
 # Default user agent
 DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -38,6 +57,7 @@ class BaseScraper(ABC):
         proxy: Optional[ProxyConfig] = None,
         cookies: Optional[dict[str, str]] = None,
         user_agent: Optional[str] = None,
+        verify_ssl: bool = True,
     ):
         """
         Initialize scraper with optional proxy and cookie support
@@ -47,11 +67,14 @@ class BaseScraper(ABC):
             proxy: ProxyConfig for HTTP/SOCKS5 proxy
             cookies: Dict of cookies to include in requests
             user_agent: Custom user agent string
+            verify_ssl: Enable SSL certificate verification (default: True).
+                        Set to False only for legacy servers with SSL issues.
         """
         self.timeout = timeout
         self.proxy = proxy
         self.cookies = cookies or {}
         self.user_agent = user_agent or DEFAULT_USER_AGENT
+        self.verify_ssl = verify_ssl
         self._client: Optional[httpx.Client] = None
 
     def _get_proxy_url(self) -> Optional[str]:
@@ -84,10 +107,14 @@ class BaseScraper(ABC):
                         proxies={"http": proxy_url, "https": proxy_url} if proxy_url else None,
                         timeout=self.timeout,
                         allow_redirects=True,
+                        verify=self.verify_ssl,
                     )
                     return self._client
-                except (ImportError, Exception) as e:
-                    logger.debug(f"Failed to use curl_cffi: {e}. Falling back to httpx.")
+                except ImportError as e:
+                    logger.debug(f"curl_cffi not available: {e}. Falling back to httpx.")
+                    use_httpx = True
+                except Exception as e:
+                    logger.warning(f"curl_cffi initialization failed: {e}. Falling back to httpx.")
                     use_httpx = True
 
             if use_httpx:
@@ -101,9 +128,10 @@ class BaseScraper(ABC):
                 }
                 if proxy_url:
                     client_kwargs["proxy"] = proxy_url
-                    client_kwargs["verify"] = True
+                    client_kwargs["verify"] = self.verify_ssl
                 else:
-                    client_kwargs["verify"] = SSL_CONTEXT
+                    # Use legacy context only if SSL verification is disabled
+                    client_kwargs["verify"] = True if self.verify_ssl else get_legacy_ssl_context()
 
                 self._client = httpx.Client(**client_kwargs)
 

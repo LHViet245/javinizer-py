@@ -2,8 +2,9 @@
 
 import pytest
 from pathlib import Path
+from datetime import date
 from javinizer.sorter import SortConfig, generate_sort_paths
-from javinizer.models import MovieMetadata
+from javinizer.models import MovieMetadata, Actress
 
 @pytest.fixture
 def sample_metadata():
@@ -11,8 +12,8 @@ def sample_metadata():
         id="IPX-486",
         title="Test Movie Title 2024",
         maker="IdeaPocket",
-        release_date="2024-01-01",
-        actresses=[{"name": "Actress Name"}],
+        release_date=date(2024, 1, 1),  # Use proper date object
+        actresses=[Actress(first_name="Test", last_name="Actress")],  # Use Actress object
         source="dmm"
     )
 
@@ -22,9 +23,9 @@ def default_config():
         folder_format="<ID> - <TITLE> (<YEAR>)",
         file_format="<ID>",
         nfo_format="<ID>",
-        move_to_folder=True,
-        rename_file=True
+        # Removed: move_to_folder and rename_file (don't exist in SortConfig)
     )
+
 
 def test_generate_sort_paths_basic(sample_metadata, default_config):
     video_path = Path("D:/Downloads/raw_video.mp4")

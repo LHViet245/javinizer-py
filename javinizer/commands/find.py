@@ -167,8 +167,8 @@ def _output_table(metadata: MovieMetadata):
     if metadata.genres:
         table.add_row("Genres", ", ".join(metadata.genres[:5]))
         if len(metadata.genres) > 5:
-        	# Typo fix: removed '...' +
             table.add_row("", f"... +{len(metadata.genres) - 5} more")
+
 
     if metadata.rating:
         table.add_row("Rating", f"⭐ {metadata.rating.rating}/10 ({metadata.rating.votes} votes)")

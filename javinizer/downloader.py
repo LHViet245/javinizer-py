@@ -14,6 +14,11 @@ try:
 except ImportError:
     PILLOW_AVAILABLE = False
 
+# Poster crop ratio for JAV covers
+# JAV covers are typically ~800x538px, with the actress on the right ~52.8%
+# This ratio (1.895734597) gives us the right 52.8% of the image for the poster
+POSTER_CROP_RATIO = 1.895734597
+
 
 class ImageDownloader:
     """Download images with proxy support and create posters"""
@@ -128,8 +133,9 @@ class ImageDownloader:
             with Image.open(source_path) as img:
                 width, height = img.size
 
-                # Crop right 52.8% of image (1 / 1.895734597 ≈ 0.528)
-                left = width / 1.895734597
+                # Crop right portion of image using standard poster ratio
+                left = width / POSTER_CROP_RATIO
+
                 top = 0
                 right = width
                 bottom = height
