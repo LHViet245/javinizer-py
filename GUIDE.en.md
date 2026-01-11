@@ -14,7 +14,10 @@ cd javinizer-py
 pip install -e .
 ```
 
-Or run `install.bat` (Windows).
+Or run **`install.bat`** (Windows) and choose:
+
+- **[1] Standard Install**: Normal installation.
+- **[2] Clean Install**: Fresh install (removes old venv, cache, logs) - recommended for fixing weird issues.
 
 ### Installed Python Packages
 
@@ -231,6 +234,8 @@ javinizer config get-javlibrary-cookies
 javinizer config get-javlibrary-cookies --proxy socks5://127.0.0.1:10808
 ```
 
+> 💡 **Tip**: If you run a scrape command and get blocked, the tool will **automatically** suggest the exact command you need to run (including proxy if configured). Just copy-paste it!
+
 > ⚠️ **NOTE**: Cloudflare cookies are tied to IP! You must use the SAME proxy when capturing cookies and when scraping.
 
 ### Step 2: Use
@@ -277,6 +282,8 @@ javinizer-py/
         └── 南日菜乃/
             └── folder.jpg
 ```
+
+> 🛡️ **Portable Feature**: Image paths are stored as **relative paths**. You can freely copy the `thumbs` folder to another machine or drive. The tool will automatically fix paths when running `update` if it detects existing images.
 
 ---
 

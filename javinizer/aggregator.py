@@ -1,8 +1,9 @@
 """Metadata aggregator for combining results from multiple scrapers"""
 
-from typing import Optional
+from typing import Any, Optional
 
 from javinizer.models import MovieMetadata, Actress, Rating, ScraperPriority
+
 
 
 def aggregate_metadata(
@@ -47,7 +48,8 @@ def aggregate_metadata(
         return expanded
 
     # Helper function to get field by priority
-    def get_field(field_name: str, priority_list: list[str]):
+    def get_field(field_name: str, priority_list: list[str]) -> Any:
+        """Get field value from results based on priority order."""
         # Expand aliases in priority list
         expanded_priority = expand_sources(priority_list)
         for source in expanded_priority:
@@ -61,6 +63,7 @@ def aggregate_metadata(
             if value:
                 return value
         return None
+
 
     # Merge actresses from all sources
     def merge_actresses() -> list[Actress]:

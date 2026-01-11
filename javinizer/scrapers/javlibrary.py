@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional
 from urllib.parse import urljoin
 
+import click
 from bs4 import BeautifulSoup
 
 from javinizer.models import Actress, MovieMetadata, ProxyConfig, Rating
@@ -66,6 +67,22 @@ class JavlibraryScraper(BaseScraper):
                 return True
         return False
 
+    def _print_cf_help(self):
+        """Print helpful message for Cloudflare issues"""
+        cmd = "javinizer config get-javlibrary-cookies"
+        proxy_url = self._get_proxy_url()
+        if proxy_url:
+            cmd += f" --proxy {proxy_url}"
+
+        msg = (
+            "Javlibrary is protected by Cloudflare.\n"
+            "   Your cookies may be expired or missing.\n"
+            "   Please run the following command to refresh them:\n\n"
+            f"       {cmd}\n"
+        )
+        logger.warning(f"Javlibrary Cloudflare challenge detected. Run '{cmd}' to fix.")
+        click.echo(f"\n⚠️  {msg}", err=True)
+
     def get_movie_url(self, movie_id: str) -> Optional[str]:
         """Find direct movie page URL by searching"""
         search_url = self.get_search_url(movie_id)
@@ -74,13 +91,9 @@ class JavlibraryScraper(BaseScraper):
             response = self.client.get(search_url)
 
             # Check for Cloudflare
+            # Check for Cloudflare
             if self._check_cloudflare(response):
-                msg = (
-                    "Javlibrary is protected by Cloudflare. "
-                    "You need to provide valid cookies (cf_clearance) using 'javinizer config set-javlibrary-cookies'."
-                )
-                logger.warning(msg)
-                print(f"\n⚠️  {msg}")
+                self._print_cf_help()
                 return None
 
             response.raise_for_status()
@@ -140,7 +153,7 @@ class JavlibraryScraper(BaseScraper):
             ("cf-browser-verification" in html or "Just a moment" in html)
         )
         if is_cf_challenge:
-            logger.warning("Javlibrary Cloudflare challenge detected.")
+            self._print_cf_help()
             return None
 
         # Parse metadata

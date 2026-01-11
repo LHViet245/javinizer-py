@@ -14,7 +14,10 @@ cd javinizer-py
 pip install -e .
 ```
 
-或者运行 `install.bat` (Windows).
+或者运行 **`install.bat`** (Windows) 并选择：
+
+- **[1] Standard Install**: 标准安装。
+- **[2] Clean Install**: 全新安装 (删除旧环境、缓存、日志) - 遇到问题时推荐使用。
 
 ### 已安装的 Python 包
 
@@ -231,6 +234,8 @@ javinizer config get-javlibrary-cookies
 javinizer config get-javlibrary-cookies --proxy socks5://127.0.0.1:10808
 ```
 
+> 💡 **提示**: 如果你在刮削时被拦截，工具会 **自动** 提示你需要运行的确切命令 (包含代理配置)。直接复制粘贴即可！
+
 > ⚠️ **注意**: Cloudflare cookie 与 IP 绑定！获取 cookie 和刮削时必须使用相同的代理。
 
 ### 第2步：使用
@@ -277,6 +282,8 @@ javinizer-py/
         └── 南日菜乃/
             └── folder.jpg
 ```
+
+> 🛡️ **便携特性 (Portable)**: 图片路径以 **相对路径** 存储。你可以自由地将 `thumbs` 文件夹复制到其他机器或硬盘。运行 `update` 命令时，如果检测到现有图片，工具会自动修复路径。
 
 ---
 

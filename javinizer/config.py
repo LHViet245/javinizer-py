@@ -49,10 +49,22 @@ def load_settings(config_path: Optional[Path] = None) -> Settings:
         with open(config_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         return Settings.model_validate(data)
-    except Exception as e:
+    except json.JSONDecodeError as e:
         from rich.console import Console
+        from javinizer.logger import get_logger
+        logger = get_logger(__name__)
+        logger.warning(f"Invalid JSON in config {config_path}: {e}")
+        Console().print(f"[yellow]Warning: Invalid JSON in config file: {e}[/]")
+        return Settings()
+    except Exception as e:
+        # Catch Pydantic ValidationError and other unexpected errors
+        from rich.console import Console
+        from javinizer.logger import get_logger
+        logger = get_logger(__name__)
+        logger.warning(f"Config load failed for {config_path}: {e}")
         Console().print(f"[yellow]Warning: Could not load config from {config_path}: {e}[/]")
         return Settings()
+
 
 
 def save_settings(settings: Settings, config_path: Optional[Path] = None) -> Path:
