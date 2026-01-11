@@ -5,7 +5,7 @@
 ### Yêu cầu hệ thống
 
 - **Python 3.10+**
-- **Chrome browser** (cho tính năng lấy cookie Javlibrary)
+- **Google Chrome** (để lấy cookie cho Javlibrary)
 
 ### Cài đặt nhanh
 
@@ -59,7 +59,9 @@ playwright install chromium
 
 ## Các lệnh chính
 
-### 1. Tìm metadata
+### 1. Tìm metadata (`find`)
+
+Tìm kiếm thông tin phim theo mã (ID).
 
 ```bash
 # Tìm cơ bản
@@ -71,46 +73,83 @@ javinizer find IPX-486 --source dmm,r18dev
 # Dùng proxy (cần Japan IP)
 javinizer find IPX-486 --proxy socks5://127.0.0.1:10808
 
-# Xuất NFO
+# Xuất NFO/JSON
 javinizer find IPX-486 --nfo
-
-# Xuất JSON
 javinizer find IPX-486 --json
+
+# Debug log
+javinizer find IPX-486 --verbose --log-file debug.log
 ```
 
-### 2. Sắp xếp video (Sort)
+- `--source, -s`: Nguồn tìm kiếm (mặc định: tất cả).
+- `--proxy, -p`: Proxy URL.
+- `--no-aggregate`: Tắt tính năng gộp kết quả, chỉ lấy từ nguồn đầu tiên tìm thấy.
+
+### 2. Sắp xếp video (`sort`)
+
+Sắp xếp file video vào cấu trúc thư mục chuẩn.
 
 ```bash
-# Sort 1 file (in-place)
+# Sort 1 file (in-place - tạo folder ngay tại chỗ)
 javinizer sort "D:/Videos/IPX-486.mp4"
 
-# Sort với destination
+# Sort với destination (di chuyển sang ổ khác)
 javinizer sort "D:/Videos/IPX-486.mp4" --dest "D:/Movies"
-
-# Sort cả thư mục
-javinizer sort-dir "D:/Videos" --dest "D:/Movies" --recursive
 
 # Preview (không thay đổi gì)
 javinizer sort "video.mp4" --dry-run
-
-# Copy thay vì move
-javinizer sort "video.mp4" --copy
 ```
 
-### 3. Cập nhật metadata (Update)
+- `--dest, -d`: Thư mục đích.
+- `--source, -s`: Nguồn scrape.
+- `--proxy, -p`: Proxy URL.
+- `--copy`: Copy file thay vì Move.
+- `--dry-run`: Chạy thử.
+
+### 3. Sắp xếp hàng loạt (`sort-dir`)
+
+Quét và sắp xếp toàn bộ video trong một thư mục.
+
+```bash
+# Sort cả thư mục
+javinizer sort-dir "D:/Videos" --dest "D:/Movies" --recursive
+```
+
+- `--dest, -d`: Thư mục đích (Bắt buộc).
+- `--recursive, -r`: Quét thư mục con.
+- `--min-size`: Dung lượng file tối thiểu (MB) để xử lý (mặc định: 100).
+- `--source, -s`: Nguồn scrape.
+- `--proxy, -p`: Proxy URL.
+
+### 4. Cập nhật metadata (`update`)
+
+Cập nhật lại metadata cho thư mục phim đã được sort trước đó.
 
 ```bash
 # Update folder đã sort
 javinizer update "D:/Movies/SDDE-761"
 
-# Update cả thư mục
-javinizer update-dir "D:/Movies" --recursive
-
 # Chỉ update NFO (bỏ qua ảnh)
 javinizer update "D:/Movies/SDDE-761" --nfo-only
 ```
 
-### 4. Quản lý Thumbnail Database
+- `--source, -s`: Nguồn scrape.
+- `--proxy, -p`: Proxy URL.
+- `--nfo-only`: Chỉ tạo lại NFO, không tải lại ảnh.
+- `--dry-run`: Chạy thử.
+
+### 5. Cập nhật hàng loạt (`update-dir`)
+
+Cập nhật cho tất cả các folder phim trong một thư mục lớn.
+
+```bash
+javinizer update-dir "D:/Movies" --recursive
+```
+
+- `--recursive, -r`: Quét thư mục con.
+- `--nfo-only`: Chỉ tạo lại NFO.
+
+### 6. Quản lý Thumbnail Database (`thumbs`)
 
 ```bash
 # Xem danh sách diễn viên
@@ -123,7 +162,7 @@ javinizer thumbs list --filter "Yua"
 javinizer thumbs update
 ```
 
-### 5. Cấu hình
+### 7. Cấu hình (`config`)
 
 ```bash
 # Xem cấu hình
@@ -135,13 +174,8 @@ javinizer config set-proxy socks5://127.0.0.1:10808
 # Tắt proxy
 javinizer config set-proxy --disable
 
-# Đổi format folder/file
-javinizer config set-sort-format --folder "<ID> - <TITLE>"
-javinizer config set-sort-format --file "<ID>"
-
-# Debug error logging
-javinizer find IPX-486 --verbose
-javinizer find IPX-486 --log-file javinizer.log
+# Lấy cookie Javlibrary (Browser)
+javinizer config get-javlibrary-cookies
 ```
 
 ---
@@ -204,7 +238,7 @@ Javinizer hỗ trợ dịch tiêu đề và mô tả từ tiếng Nhật sang ng
 "translation": {
   "enabled": true,
   "provider": "google",
-  "target_language": "en",
+  "target_language": "vi",
   "deepl_api_key": null,
   "translate_title": true,
   "translate_description": true
@@ -236,7 +270,7 @@ javinizer config get-javlibrary-cookies
 javinizer config get-javlibrary-cookies --proxy socks5://127.0.0.1:10808
 ```
 
-> 💡 **Mẹo**: Nếu bạn chạy lệnh scrape và bị chặn, tool sẽ **tự động** gợi ý chính xác lệnh cần chạy (bao gồm cả proxy nếu đang cấu hình). Chỉ cần copy-paste lệnh đó là xong!
+> 💡 **Mẹo**: Nếu bạn chạy lệnh scrape và bị chặn, tool sẽ **tự động** gợi ý chính xác lệnh cần chạy.
 
 > ⚠️ **LƯU Ý**: Cookie Cloudflare gắn với IP! Phải dùng cùng proxy khi lấy cookie và khi scrape.
 
@@ -245,24 +279,6 @@ javinizer config get-javlibrary-cookies --proxy socks5://127.0.0.1:10808
 ```bash
 javinizer find SDDE-761 --source javlibrary
 ```
-
----
-
-## Nguồn dữ liệu (Scrapers)
-
-| Nguồn | Yêu cầu proxy | Ghi chú |
-|-------|---------------|---------|
-| `r18dev` | Có (Japan IP) | API JSON, nhanh, **khuyên dùng** |
-| `dmm_new` | Có | Dùng Playwright, chất lượng cao |
-| `dmm` | Có | Site cũ, fallback |
-| `javlibrary` | Có + Cookies | Cần bypass Cloudflare |
-
-### Scraper Alias
-
-Khi chỉ định `--source dmm`, hệ thống tự động mở rộng thành `dmm_new, dmm`:
-
-- Thử `dmm_new` trước (nếu có Playwright)
-- Fallback sang `dmm` nếu thất bại
 
 ---
 
@@ -285,19 +301,7 @@ javinizer-py/
             └── folder.jpg
 ```
 
-### Cấu hình
-
-```json
-"thumbs": {
-  "enabled": true,
-  "storage_path": "thumbs",
-  "csv_file": "actresses.csv",
-  "auto_download": true,
-  "download_on_sort": true
-}
-```
-
-> 🛡️ **Tính năng Portable**: Đường dẫn ảnh được lưu dưới dạng **tương đối** (Relative Path). Bạn có thể copy thư mục `thumbs` sang máy khác hoặc ổ đĩa khác thoải mái. Khi chạy lệnh `update`, tool sẽ tự động sửa lại đường dẫn nếu phát hiện file ảnh có sẵn.
+> 🛡️ **Tính năng Portable**: Đường dẫn ảnh được lưu dưới dạng **tương đối** (Relative Path). Bạn có thể copy thư mục `thumbs` sang máy khác hoặc ổ đĩa khác thoải mái.
 
 ---
 
@@ -332,12 +336,3 @@ D:/Movies/
     cover.jpg       ← Poster (cropped)
     backdrop.jpg    ← Full cover
 ```
-
----
-
-## Lưu ý quan trọng
-
-1. **Cần Japan IP**: Tất cả các nguồn đều cần proxy Japan
-2. **Javlibrary**: Cookie gắn với IP - dùng cùng proxy khi lấy cookie và khi scrape
-3. **Translation**: Có thể chậm khi dùng qua SOCKS proxy
-4. **Aggregation**: Dùng `--source r18dev,dmm` để gộp metadata từ nhiều nguồn
