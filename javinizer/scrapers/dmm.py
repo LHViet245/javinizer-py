@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 from typing import Optional
 from urllib.parse import quote
+from functools import lru_cache
 
 from bs4 import BeautifulSoup, Tag
 
@@ -53,6 +54,7 @@ class DMMScraper(BaseScraper):
         return client
 
     @staticmethod
+    @lru_cache(maxsize=128)
     def normalize_id_variants(movie_id: str) -> list[str]:
         """
         Generate possible content ID formats for a movie ID
@@ -92,6 +94,7 @@ class DMMScraper(BaseScraper):
         return variants
 
     @staticmethod
+    @lru_cache(maxsize=128)
     def normalize_id(movie_id: str) -> tuple[str, str]:
         """
         Convert movie ID to DMM content ID format (primary format)

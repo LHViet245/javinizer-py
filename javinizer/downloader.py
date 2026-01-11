@@ -177,16 +177,22 @@ class ImageDownloader:
             return 0
 
         dest_folder.mkdir(parents=True, exist_ok=True)
-        success_count = 0
-
+        
+        # Create download tasks
+        tasks = []
         for i, url in enumerate(urls, 1):
             ext = self._get_extension(url)
             dest_path = dest_folder / f"{prefix}-{i:02d}{ext}"
+            tasks.append(self.download_image(url, dest_path))
 
-            if await self.download_image(url, dest_path):
-                success_count += 1
-
-        return success_count
+        # Run concurrently
+        if not tasks:
+            return 0
+            
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Count successes (True results)
+        return sum(1 for r in results if r is True)
 
     def _get_extension(self, url: str) -> str:
         """Extract file extension from URL"""

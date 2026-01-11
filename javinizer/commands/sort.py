@@ -70,29 +70,14 @@ def sort(video_file: str, dest: Optional[str], source: str, proxy: Optional[str]
     sources = expand_sources([s.strip() for s in source.split(",")])
     results = {}
 
-    for src in sources:
-        scraper = get_scraper(
-            src,
-            proxy=proxy_config,
-            cookies=settings.javlibrary_cookies if src in ("javlibrary", "jav") else None,
-            user_agent=settings.javlibrary_user_agent if src in ("javlibrary", "jav") else None,
-        )
-
-        if scraper is None:
-            continue
-
-        with scraper:
-            try:
-                console.print(f"[dim]Scraping from {src}...[/]", end=" ")
-                metadata = scraper.find(movie_id)
-                if metadata:
-                    results[src] = metadata
-                    console.print("[green]OK[/]")
-                    # aggregate mode: continue to next source
-                else:
-                    console.print("[yellow]no results[/]")
-            except Exception as e:
-                console.print(f"[red]error: {e}[/]")
+    from javinizer.cli_common import scrape_parallel
+    results = scrape_parallel(
+        movie_id, 
+        sources, 
+        proxy_config, 
+        settings, 
+        console
+    )
 
     if not results:
         console.print(f"[red]Could not find metadata for {movie_id}[/]")

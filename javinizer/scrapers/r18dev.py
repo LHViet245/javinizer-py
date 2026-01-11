@@ -3,6 +3,7 @@
 import re
 from datetime import datetime
 from typing import Optional
+from functools import lru_cache
 
 import httpx
 
@@ -59,6 +60,7 @@ class R18DevScraper(BaseScraper):
         return self._client
 
     @staticmethod
+    @lru_cache(maxsize=128)
     def normalize_id_variants(movie_id: str) -> list[str]:
         """
         Generate possible content ID formats for a movie ID

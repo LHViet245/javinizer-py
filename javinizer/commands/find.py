@@ -73,34 +73,14 @@ def find(movie_id: str, source: str, proxy: Optional[str], nfo: bool, as_json: b
     # Scrape from all sources
     results: dict[str, MovieMetadata] = {}
 
-    for src in sources:
-        scraper = get_scraper(
-            src,
-            proxy=proxy_config,
-            cookies=settings.javlibrary_cookies if src in ("javlibrary", "jav") else None,
-            user_agent=settings.javlibrary_user_agent if src in ("javlibrary", "jav") else None,
-        )
-
-        if scraper is None:
-            console.print(f"[yellow]⚠️  Unknown source: {src}[/]")
-            logger.warning(f"Unknown scraper source requested: {src}")
-            continue
-
-        with scraper:
-            try:
-                console.print(f"[dim]Scraping from {src}...[/]", end=" ")
-                logger.debug(f"Scraping {movie_id} from {src}")
-                metadata = scraper.find(movie_id)
-                if metadata:
-                    results[src] = metadata
-                    console.print(f"[green]✓[/]")
-                    logger.info(f"Found {movie_id} on {src}")
-                else:
-                    console.print(f"[yellow]no results[/]")
-                    logger.debug(f"No results for {movie_id} on {src}")
-            except Exception as e:
-                console.print(f"[red]error: {e}[/]")
-                logger.error(f"Error scraping {src}: {e}", exc_info=True)
+    from javinizer.cli_common import scrape_parallel
+    results = scrape_parallel(
+        movie_id, 
+        sources, 
+        proxy_config, 
+        settings, 
+        console
+    )
 
     if not results:
         console.print(f"\n[yellow]⚠️  No results found for {movie_id}[/]")
