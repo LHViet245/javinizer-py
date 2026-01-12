@@ -10,6 +10,7 @@ from javinizer.commands.update import update, update_dir
 from javinizer.commands.config import config
 from javinizer.commands.thumbs import thumbs
 from javinizer.commands.info import info
+from javinizer.commands.status import status
 
 
 @click.group()
@@ -28,6 +29,8 @@ def main():
         javinizer find IPX-486 --proxy socks5://127.0.0.1:1080
 
         javinizer config --proxy socks5://127.0.0.1:1080
+        
+        javinizer status
     """
     pass
 
@@ -41,6 +44,7 @@ main.add_command(update_dir)
 main.add_command(config)
 main.add_command(thumbs)
 main.add_command(info)
+main.add_command(status)
 
 
 if __name__ == "__main__":

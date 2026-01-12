@@ -7,6 +7,10 @@ from urllib.parse import urlparse
 
 import httpx
 
+from javinizer.logger import get_logger
+
+logger = get_logger(__name__)
+
 # Try to import Pillow for image cropping
 try:
     from PIL import Image
@@ -77,7 +81,12 @@ class ImageDownloader:
                 return True
 
         except Exception as e:
-            print(f"Error downloading image from {url}: {e}")
+            logger.error(f"Failed to download image", extra={
+                "url": url,
+                "dest": str(dest_path),
+                "error": str(e),
+                "stage": "download"
+            })
             return False
 
     async def download_cover_and_poster(
@@ -123,7 +132,7 @@ class ImageDownloader:
             True if successful, False otherwise
         """
         if not PILLOW_AVAILABLE:
-            print("Pillow not installed. Cannot create poster.")
+            logger.warning("Pillow not installed. Cannot create poster.", extra={"stage": "poster"})
             return False
 
         if not source_path.exists():
@@ -153,7 +162,12 @@ class ImageDownloader:
                 return True
 
         except Exception as e:
-            print(f"Error creating poster: {e}")
+            logger.error(f"Failed to create poster", extra={
+                "source": str(source_path),
+                "dest": str(poster_path),
+                "error": str(e),
+                "stage": "poster"
+            })
             return False
 
     async def download_screenshots(

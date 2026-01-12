@@ -9,6 +9,7 @@ import httpx
 
 from javinizer.models import Actress, MovieMetadata, ProxyConfig, Rating
 from javinizer.scrapers.base import BaseScraper
+from javinizer.scrapers.utils import normalize_id_variants
 from javinizer.logger import get_logger
 
 logger = get_logger(__name__)
@@ -60,50 +61,14 @@ class R18DevScraper(BaseScraper):
         return self._client
 
     @staticmethod
-    @lru_cache(maxsize=128)
-    def normalize_id_variants(movie_id: str) -> list[str]:
-        """
-        Generate possible content ID formats for a movie ID
-
-        Some IDs have digit prefixes: START-422 -> 1start422
-        Some use padding: IPX-486 -> ipx00486
-
-        Returns list of possible content IDs to try
-        """
-        movie_id = movie_id.upper().strip()
-
-        match = re.match(r"([A-Z]+)-?(\d+)", movie_id)
-        if not match:
-            return [movie_id.lower()]
-
-        prefix, number = match.groups()
-        prefix_lower = prefix.lower()
-
-        # Generate multiple possible formats
-        variants = []
-
-        # Format 1: prefix + padded number (ipx00486)
-        variants.append(f"{prefix_lower}{number.zfill(5)}")
-
-        # Format 2: digit prefix + prefix + number (1start422)
-        # Some content IDs have a leading digit (usually 1)
-        variants.append(f"1{prefix_lower}{number}")
-
-        # Format 3: prefix + number without padding
-        variants.append(f"{prefix_lower}{number}")
-
-        # Format 4: digit prefix + prefix + padded number
-        variants.append(f"1{prefix_lower}{number.zfill(5)}")
-
-        # Format 5: h_ prefix for amateur content
-        variants.append(f"h_{prefix_lower}{number.zfill(5)}")
-
-        return variants
+    def get_id_variants(movie_id: str) -> list[str]:
+        """Generate possible content ID formats for a movie ID"""
+        return normalize_id_variants(movie_id)
 
     @staticmethod
     def normalize_id(movie_id: str) -> str:
         """Normalize movie ID to primary content ID format (backward compatible)"""
-        return R18DevScraper.normalize_id_variants(movie_id)[0]
+        return normalize_id_variants(movie_id)[0]
 
     def get_search_url(self, movie_id: str) -> str:
         """Build API URL for movie ID"""
@@ -116,7 +81,7 @@ class R18DevScraper(BaseScraper):
 
         Returns the first URL that returns valid data
         """
-        variants = self.normalize_id_variants(movie_id)
+        variants = normalize_id_variants(movie_id)
 
         for content_id in variants:
             url = f"{self.api_url}{content_id}/json"

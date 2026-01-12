@@ -166,6 +166,27 @@ class TranslationSettings(BaseModel):
     translate_description: bool = True
 
 
+class RetrySettings(BaseModel):
+    """HTTP retry settings with exponential backoff"""
+
+    enabled: bool = True
+    max_retries: int = 3
+    initial_delay: float = 1.0  # seconds
+    max_delay: float = 30.0  # seconds cap
+    exponential_base: float = 2.0
+    retryable_status_codes: list[int] = Field(
+        default_factory=lambda: [429, 500, 502, 503, 504]
+    )
+
+
+class RateLimitSettings(BaseModel):
+    """Rate limiting settings per domain"""
+
+    enabled: bool = True
+    default_delay: float = 1.0  # seconds between requests to same domain
+    domain_delays: dict[str, float] = Field(default_factory=dict)  # per-domain overrides
+
+
 class Settings(BaseModel):
     """Application settings"""
 
@@ -201,4 +222,19 @@ class Settings(BaseModel):
 
     # Translation
     translation: TranslationSettings = Field(default_factory=TranslationSettings)
+
+    # HTTP Retry settings
+    retry: RetrySettings = Field(default_factory=RetrySettings)
+
+    # Rate limiting settings
+    rate_limit: RateLimitSettings = Field(default_factory=RateLimitSettings)
+
+    # Cache settings
+    cache_enabled: bool = True
+    cache_ttl_days: int = 30
+    cache_path: str = "cache/metadata.db"
+
+    # Concurrency settings
+    max_concurrent_downloads: int = 5
+    max_concurrent_scrapers: int = 3
 

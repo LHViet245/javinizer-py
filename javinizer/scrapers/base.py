@@ -8,6 +8,7 @@ import httpx
 
 from javinizer.models import MovieMetadata, ProxyConfig
 from javinizer.logger import get_logger
+from javinizer.http.rate_limiter import DomainRateLimiter, get_rate_limiter
 
 logger = get_logger(__name__)
 
@@ -58,6 +59,7 @@ class BaseScraper(ABC):
         cookies: Optional[dict[str, str]] = None,
         user_agent: Optional[str] = None,
         verify_ssl: bool = True,
+        rate_limiter: Optional[DomainRateLimiter] = None,
     ):
         """
         Initialize scraper with optional proxy and cookie support
@@ -69,12 +71,14 @@ class BaseScraper(ABC):
             user_agent: Custom user agent string
             verify_ssl: Enable SSL certificate verification (default: True).
                         Set to False only for legacy servers with SSL issues.
+            rate_limiter: Optional rate limiter instance (uses global if None)
         """
         self.timeout = timeout
         self.proxy = proxy
         self.cookies = cookies or {}
         self.user_agent = user_agent or DEFAULT_USER_AGENT
         self.verify_ssl = verify_ssl
+        self.rate_limiter = rate_limiter
         self._client: Optional[httpx.Client] = None
 
     def _get_proxy_url(self) -> Optional[str]:
@@ -173,5 +177,10 @@ class BaseScraper(ABC):
         url = self.get_movie_url(movie_id)
         if url is None:
             return None
+        
+        # Apply rate limiting before making request
+        limiter = self.rate_limiter or get_rate_limiter()
+        limiter.acquire(url)
+        
         return self.scrape(url)
 

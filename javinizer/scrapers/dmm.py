@@ -10,6 +10,12 @@ from bs4 import BeautifulSoup, Tag
 
 from javinizer.models import Actress, MovieMetadata, ProxyConfig, Rating
 from javinizer.scrapers.base import BaseScraper
+from javinizer.scrapers.utils import (
+    normalize_id_variants,
+    normalize_id,
+    content_id_to_movie_id,
+    is_valid_actress_name,
+)
 from javinizer.logger import get_logger
 
 logger = get_logger(__name__)
@@ -54,69 +60,18 @@ class DMMScraper(BaseScraper):
         return client
 
     @staticmethod
-    @lru_cache(maxsize=128)
-    def normalize_id_variants(movie_id: str) -> list[str]:
-        """
-        Generate possible content ID formats for a movie ID
-
-        Some IDs have digit prefixes: START-422 -> 1start422
-        Some use padding: IPX-486 -> ipx00486
-
-        Returns list of possible content IDs to try
-        """
-        movie_id = movie_id.upper().strip()
-
-        match = re.match(r"([A-Z]+)-?(\d+)", movie_id)
-        if not match:
-            return [movie_id.lower()]
-
-        prefix, number = match.groups()
-        prefix_lower = prefix.lower()
-
-        # Generate multiple possible formats
-        variants = []
-
-        # Format 1: prefix + padded number (ipx00486)
-        variants.append(f"{prefix_lower}{number.zfill(5)}")
-
-        # Format 2: digit prefix + prefix + number (1start422)
-        variants.append(f"1{prefix_lower}{number}")
-
-        # Format 3: prefix + number without padding
-        variants.append(f"{prefix_lower}{number}")
-
-        # Format 4: digit prefix + prefix + padded number
-        variants.append(f"1{prefix_lower}{number.zfill(5)}")
-
-        # Format 5: h_ prefix for amateur content
-        variants.append(f"h_{prefix_lower}{number.zfill(5)}")
-
-        return variants
+    def get_id_variants(movie_id: str) -> list[str]:
+        """Generate possible content ID formats for a movie ID"""
+        return normalize_id_variants(movie_id)
 
     @staticmethod
-    @lru_cache(maxsize=128)
-    def normalize_id(movie_id: str) -> tuple[str, str]:
-        """
-        Convert movie ID to DMM content ID format (primary format)
-
-        Example: IPX-486 -> ipx00486
-        Returns: (normalized_id, display_id)
-        """
-        movie_id = movie_id.upper().strip()
-
-        match = re.match(r"([A-Z]+)-?(\d+)", movie_id)
-        if not match:
-            return movie_id.lower(), movie_id
-
-        prefix, number = match.groups()
-        content_id = f"{prefix.lower()}{number.zfill(5)}"
-        display_id = f"{prefix}-{number.zfill(3)}"
-
-        return content_id, display_id
+    def get_normalized_id(movie_id: str) -> tuple[str, str]:
+        """Convert movie ID to DMM content ID format"""
+        return normalize_id(movie_id)
 
     def get_search_url(self, movie_id: str) -> str:
         """Build DMM search URL"""
-        content_id, _ = self.normalize_id(movie_id)
+        content_id, _ = normalize_id(movie_id)
         return f"{self.base_url}/search/?searchstr={quote(content_id)}"
 
     def get_movie_url(self, movie_id: str) -> Optional[str]:
@@ -126,7 +81,7 @@ class DMMScraper(BaseScraper):
         We only support the old www.dmm.co.jp format. If content redirects
         to new site, return None and let R18Dev handle it.
         """
-        variants = self.normalize_id_variants(movie_id)
+        variants = normalize_id_variants(movie_id)
 
         # Try each variant with direct URLs
         for content_id in variants:
@@ -226,17 +181,9 @@ class DMMScraper(BaseScraper):
         match = re.search(r"cid=([^/&]+)", url)
         return match.group(1) if match else None
 
-    def _content_id_to_movie_id(self, content_id: str) -> str:
+    def _content_id_to_movie_id(self, cid: str) -> str:
         """Convert DMM content ID to standard movie ID"""
-        # Pattern: letters followed by digits
-        match = re.match(r"(\d*)([a-z]+)(\d+)(.*)$", content_id, re.IGNORECASE)
-        if not match:
-            return content_id.upper()
-
-        _, prefix, number, suffix = match.groups()
-        # Remove leading zeros but keep at least 3 digits
-        number = number.lstrip("0").zfill(3)
-        return f"{prefix.upper()}-{number}{suffix.upper()}"
+        return content_id_to_movie_id(cid)
 
     def _parse_title(self, soup: BeautifulSoup) -> Optional[str]:
         """Parse movie title"""
@@ -356,37 +303,8 @@ class DMMScraper(BaseScraper):
         return actresses
 
     def _is_valid_actress_name(self, name: str) -> bool:
-        """
-        Check if a string is a valid actress name.
-        
-        Filters out promotional text, ads, and other invalid entries.
-        """
-        # Names should be reasonable length (most Japanese names < 20 chars)
-        if len(name) > 30:
-            return False
-        
-        # Skip if contains promotional markers
-        invalid_markers = [
-            '★', '☆', '●', '◆', '■',  # Special markers
-            'ご購入', '商品', 'こちら',  # Purchase/product text
-            'アダルトブック', '写真集',  # Book/photobook promo
-            'http', 'www', '.com', '.jp',  # URLs
-            '限定', '特典', 'キャンペーン',  # Limited/bonus/campaign
-            '配信', 'ダウンロード',  # Distribution/download
-        ]
-        
-        for marker in invalid_markers:
-            if marker in name:
-                return False
-        
-        # Name should contain at least some Japanese or Latin characters
-        # (not just numbers or special characters)
-        has_valid_chars = bool(re.search(r'[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf a-zA-Z]', name))
-
-        if not has_valid_chars:
-            return False
-        
-        return True
+        """Check if a string is a valid actress name."""
+        return is_valid_actress_name(name)
 
 
     def _parse_genres(self, html: str) -> list[str]:
