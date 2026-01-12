@@ -10,7 +10,8 @@ try:
     from .dmm_new import DMMNewScraper, is_playwright_available
 except ImportError:
     DMMNewScraper = None
-    is_playwright_available = lambda: False
+    def is_playwright_available():
+        return False
 
 __all__ = [
     "BaseScraper",

@@ -47,7 +47,9 @@ def update(
     # Extract movie ID from folder name
     movie_id = extract_movie_id(folder_path.name)
     if not movie_id:
-        console.print(f"[red]Could not extract movie ID from folder name: {folder_path.name}[/]")
+        console.print(
+            f"[red]Could not extract movie ID from folder name: {folder_path.name}[/]"
+        )
         return
 
     console.print(f"[cyan]Movie ID:[/] {movie_id}")
@@ -70,8 +72,12 @@ def update(
         scraper = get_scraper(
             src,
             proxy=proxy_config,
-            cookies=settings.javlibrary_cookies if src in ("javlibrary", "jav") else None,
-            user_agent=settings.javlibrary_user_agent if src in ("javlibrary", "jav") else None,
+            cookies=settings.javlibrary_cookies
+            if src in ("javlibrary", "jav")
+            else None,
+            user_agent=settings.javlibrary_user_agent
+            if src in ("javlibrary", "jav")
+            else None,
         )
 
         if scraper is None:
@@ -96,6 +102,7 @@ def update(
     # Aggregate results if multiple sources found
     if len(results) > 1:
         from javinizer.aggregator import aggregate_metadata
+
         metadata = aggregate_metadata(results, settings.priority)
         console.print(f"[green]📦 Aggregated from {len(results)} sources[/]")
     else:
@@ -162,7 +169,9 @@ def update(
 @click.argument("input_dir", type=click.Path(exists=True))
 @click.option("--source", "-s", default="r18dev,dmm_new", help="Scraper sources")
 @click.option("--proxy", "-p", help="Proxy URL")
-@click.option("--recursive", "-r", is_flag=True, help="Search subdirectories recursively")
+@click.option(
+    "--recursive", "-r", is_flag=True, help="Search subdirectories recursively"
+)
 @click.option("--dry-run", is_flag=True, help="Preview without changes")
 @click.option("--nfo-only", is_flag=True, help="Only update NFO, skip images")
 def update_dir(
@@ -229,5 +238,5 @@ def update_dir(
             error_count += 1
 
     console.print()
-    console.print(f"[bold]Summary:[/]")
+    console.print("[bold]Summary:[/]")
     console.print(f"  Updated: {success_count}")

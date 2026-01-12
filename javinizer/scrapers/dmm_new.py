@@ -12,13 +12,17 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from javinizer.models import Actress, MovieMetadata, ProxyConfig, Rating
+from javinizer.models import Actress, MovieMetadata, ProxyConfig
+from javinizer.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def is_playwright_available() -> bool:
     """Check if Playwright is installed"""
     try:
-        from playwright.sync_api import sync_playwright
+        from playwright.sync_api import sync_playwright  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -164,15 +168,34 @@ class DMMNewScraper:
 
         try:
             # Set cookies for age verification on multiple domains
-            page.context.add_cookies([
-                {"name": "age_check_done", "value": "1", "domain": ".dmm.co.jp", "path": "/"},
-                {"name": "age_check_done", "value": "1", "domain": "video.dmm.co.jp", "path": "/"},
-                {"name": "age_check_done", "value": "1", "domain": "www.dmm.co.jp", "path": "/"},
-            ])
+            page.context.add_cookies(
+                [
+                    {
+                        "name": "age_check_done",
+                        "value": "1",
+                        "domain": ".dmm.co.jp",
+                        "path": "/",
+                    },
+                    {
+                        "name": "age_check_done",
+                        "value": "1",
+                        "domain": "video.dmm.co.jp",
+                        "path": "/",
+                    },
+                    {
+                        "name": "age_check_done",
+                        "value": "1",
+                        "domain": "www.dmm.co.jp",
+                        "path": "/",
+                    },
+                ]
+            )
 
             # Navigate and wait for content to load
             try:
-                page.goto(url, timeout=int(self.timeout * 1000), wait_until="networkidle")
+                page.goto(
+                    url, timeout=int(self.timeout * 1000), wait_until="networkidle"
+                )
             except Exception:
                 pass
 
@@ -183,7 +206,9 @@ class DMMNewScraper:
             # Check if we got redirected to age check page
             if "age_check" in page.url:
                 try:
-                    age_button = page.query_selector('a:has-text("はい"), a[href*="age_check"], input[type="submit"]')
+                    age_button = page.query_selector(
+                        'a:has-text("はい"), a[href*="age_check"], input[type="submit"]'
+                    )
                     if age_button:
                         age_button.click()
                         page.wait_for_load_state("networkidle")
@@ -192,11 +217,13 @@ class DMMNewScraper:
 
             # Also check for overlay/modal age check
             try:
-                age_button = page.query_selector('button:has-text("はい"), button:has-text("Enter"), [class*="age"] button')
+                age_button = page.query_selector(
+                    'button:has-text("はい"), button:has-text("Enter"), [class*="age"] button'
+                )
                 if age_button:
                     age_button.click()
                     page.wait_for_timeout(1000)
-            except:
+            except Exception:
                 pass
 
             # Check for 404 again after potential redirects
@@ -205,8 +232,10 @@ class DMMNewScraper:
 
             # Wait for content
             try:
-                page.wait_for_selector('h1, img[src*="pics.dmm"], [class*="content"]', timeout=10000)
-            except:
+                page.wait_for_selector(
+                    'h1, img[src*="pics.dmm"], [class*="content"]', timeout=10000
+                )
+            except Exception:
                 pass
 
             # Check for 404 one last time
@@ -230,18 +259,22 @@ class DMMNewScraper:
         try:
             # Check title
             title = page.title().lower()
-            if "404" in title or "not found" in title or "ページが見つかりません" in title:
+            if (
+                "404" in title
+                or "not found" in title
+                or "ページが見つかりません" in title
+            ):
                 return True
 
             # Check h1
-            h1 = page.query_selector('h1')
+            h1 = page.query_selector("h1")
             if h1:
                 text = h1.inner_text().strip().lower()
                 if "404" in text or "not found" in text:
                     return True
 
             return False
-        except:
+        except Exception:
             return False
 
     def _extract_metadata(self, page, url: str) -> Optional[MovieMetadata]:
@@ -252,7 +285,7 @@ class DMMNewScraper:
                 return None
 
             # Extract content ID from URL
-            content_id = re.search(r'id=([^&]+)', url)
+            content_id = re.search(r"id=([^&]+)", url)
             content_id = content_id.group(1) if content_id else ""
 
             # Convert content ID to display ID
@@ -260,65 +293,80 @@ class DMMNewScraper:
 
             # Extract title - try multiple selectors
             title = None
-            for selector in ['h1', '[class*="title" i]', 'title']:
+            for selector in ["h1", '[class*="title" i]', "title"]:
                 try:
                     elem = page.query_selector(selector)
                     if elem:
                         title = elem.inner_text().strip()
                         if title and len(title) > 5:
                             break
-                except:
+                except Exception:
                     continue
 
             # Extract data table values
             data = {}
 
             # Try to find data rows (dt/dd pairs or table rows)
-            rows = page.query_selector_all('dt, th')
+            rows = page.query_selector_all("dt, th")
             for row in rows:
                 try:
                     row_label = row.inner_text().strip()
                     # Find corresponding value
-                    value_elem = row.evaluate('el => el.nextElementSibling')
+                    value_elem = row.evaluate("el => el.nextElementSibling")
                     if value_elem:
-                        value = page.evaluate('el => el.innerText', value_elem)
+                        value = page.evaluate("el => el.innerText", value_elem)
                         data[row_label] = value.strip() if value else ""
-                except:
+                except Exception:
                     continue
 
             # Extract actresses - only from main content table, avoid sidebar
             actresses = []
             # Look for actress links within the main content table (links with ?actress= pattern)
-            main_table = page.query_selector('main table')
+            main_table = page.query_selector("main table")
             if main_table:
                 actress_links = main_table.query_selector_all('a[href*="?actress="]')
                 for link in actress_links:
                     try:
                         name = link.inner_text().strip()
                         # Skip empty or placeholder values
-                        if not name or name == '-' or name == '----' or len(name) > 30:
+                        if not name or name == "-" or name == "----" or len(name) > 30:
                             continue
 
-                        skip_keywords = ["一覧", "リスト", "もっと", "作品", "すべて", "検索", "AV女優", "ランキング"]
+                        skip_keywords = [
+                            "一覧",
+                            "リスト",
+                            "もっと",
+                            "作品",
+                            "すべて",
+                            "検索",
+                            "AV女優",
+                            "ランキング",
+                        ]
                         if any(k in name for k in skip_keywords):
                             continue
 
-                        is_japanese = bool(re.search(r'[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]', name))
-                        actresses.append(Actress(
-                            japanese_name=name if is_japanese else None,
-                            first_name=name if not is_japanese else None,
-                        ))
-                    except:
+                        is_japanese = bool(
+                            re.search(
+                                r"[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]", name
+                            )
+                        )
+                        actresses.append(
+                            Actress(
+                                japanese_name=name if is_japanese else None,
+                                first_name=name if not is_japanese else None,
+                            )
+                        )
+                    except Exception:
                         continue
 
             # Extract maker from main table
-            maker = ''
+            maker = ""
             maker_link = page.query_selector('main table a[href*="?maker="]')
             if maker_link:
                 maker = maker_link.inner_text().strip()
 
             # Extract label from main table
-            label = ''
+            label = ""
             label_link = page.query_selector('main table a[href*="?label="]')
             if label_link:
                 label = label_link.inner_text().strip()
@@ -333,7 +381,7 @@ class DMMNewScraper:
                         genre = link.inner_text().strip()
                         if genre and genre not in genres and len(genre) < 30:
                             genres.append(genre)
-                    except:
+                    except Exception:
                         continue
 
             # Extract cover image - prioritize awsimgsrc.dmm.co.jp with pl.jpg pattern
@@ -349,16 +397,16 @@ class DMMNewScraper:
                 try:
                     imgs = page.query_selector_all(selector)
                     for img in imgs:
-                        src = img.get_attribute('src')
-                        if src and ('.jpg' in src.lower() or '.webp' in src.lower()):
+                        src = img.get_attribute("src")
+                        if src and (".jpg" in src.lower() or ".webp" in src.lower()):
                             # Remove all query params to get full resolution image
-                            if '?' in src:
-                                src = src.split('?')[0]
+                            if "?" in src:
+                                src = src.split("?")[0]
                             cover_url = src
                             break
                     if cover_url:
                         break
-                except:
+                except Exception:
                     continue
 
             # If no cover found with selectors, construct URL from content_id
@@ -371,50 +419,57 @@ class DMMNewScraper:
 
             if main_table:
                 # Get all table rows
-                rows = main_table.query_selector_all('tr')
+                rows = main_table.query_selector_all("tr")
                 for row in rows:
                     try:
-                        th = row.query_selector('th')
-                        td = row.query_selector('td span, td')
+                        th = row.query_selector("th")
+                        td = row.query_selector("td span, td")
                         if th and td:
                             row_label = th.inner_text().strip()
                             value = td.inner_text().strip()
 
                             # Release date
-                            if '配信開始日' in row_label or '発売日' in row_label:
-                                date_match = re.search(r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})', value)
+                            if "配信開始日" in row_label or "発売日" in row_label:
+                                date_match = re.search(
+                                    r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})", value
+                                )
                                 if date_match:
                                     try:
                                         y, m, d = date_match.groups()
-                                        release_date = datetime(int(y), int(m), int(d)).date()
-                                    except:
+                                        release_date = datetime(
+                                            int(y), int(m), int(d)
+                                        ).date()
+                                    except Exception:
                                         pass
 
                             # Runtime
-                            if '収録時間' in row_label:
-                                runtime_match = re.search(r'(\d+)', value)
+                            if "収録時間" in row_label:
+                                runtime_match = re.search(r"(\d+)", value)
                                 if runtime_match:
                                     runtime = int(runtime_match.group(1))
-                    except:
+                    except Exception:
                         continue
 
             # Fallback to data dict if table parsing failed
             if not release_date:
-                for key in ['発売日', '配信開始日', 'Release Date']:
+                for key in ["発売日", "配信開始日", "Release Date"]:
                     if key in data:
-                        date_match = re.search(r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})', data[key])
+                        date_match = re.search(
+                            r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})", data[key]
+                        )
                         if date_match:
                             try:
                                 y, m, d = date_match.groups()
                                 release_date = datetime(int(y), int(m), int(d)).date()
-                            except:
+                            except Exception as e:
+                                logger.debug(f"Failed to parse release date: {e}")
                                 pass
                         break
 
             if not runtime:
-                for key in ['収録時間', 'Runtime']:
+                for key in ["収録時間", "Runtime"]:
                     if key in data:
-                        runtime_match = re.search(r'(\d+)', data[key])
+                        runtime_match = re.search(r"(\d+)", data[key])
                         if runtime_match:
                             runtime = int(runtime_match.group(1))
                         break
@@ -424,13 +479,13 @@ class DMMNewScraper:
                 content_id=content_id,
                 title=title or movie_id,
                 original_title=title,
-                description=data.get('商品説明', ''),
+                description=data.get("商品説明", ""),
                 release_date=release_date,
                 runtime=runtime,
-                director=data.get('監督', ''),
-                maker=maker or data.get('メーカー', '') or data.get('Maker', ''),
-                label=label or data.get('レーベル', '') or data.get('Label', ''),
-                series=data.get('シリーズ', '') or data.get('Series', ''),
+                director=data.get("監督", ""),
+                maker=maker or data.get("メーカー", "") or data.get("Maker", ""),
+                label=label or data.get("レーベル", "") or data.get("Label", ""),
+                series=data.get("シリーズ", "") or data.get("Series", ""),
                 actresses=actresses,
                 genres=genres,
                 cover_url=cover_url,
@@ -444,7 +499,7 @@ class DMMNewScraper:
     def _content_id_to_movie_id(self, content_id: str) -> str:
         """Convert content ID to display format"""
         # Pattern: optional digit + letters + digits
-        match = re.match(r'(\d?)([a-z]+)(\d+)', content_id, re.IGNORECASE)
+        match = re.match(r"(\d?)([a-z]+)(\d+)", content_id, re.IGNORECASE)
         if not match:
             return content_id.upper()
 
@@ -463,6 +518,8 @@ if __name__ == "__main__":
             if meta:
                 print(f"Title: {meta.title}")
                 print(f"ID: {meta.id}")
-                print(f"Actresses: {[a.japanese_name or a.full_name for a in meta.actresses]}")
+                print(
+                    f"Actresses: {[a.japanese_name or a.full_name for a in meta.actresses]}"
+                )
             else:
                 print("No results found")

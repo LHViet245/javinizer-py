@@ -1,7 +1,6 @@
 """Helper functions for CLI commands to reduce code duplication"""
 
 import asyncio
-from typing import Optional
 
 from rich.console import Console
 
@@ -40,6 +39,7 @@ def translate_metadata_if_enabled(metadata: MovieMetadata, settings: Settings) -
     console.print("[dim]Translating...[/]", end=" ")
     try:
         from javinizer.translator import Translator, translate_metadata
+
         translator = Translator(
             provider=settings.translation.provider,
             target_language=settings.translation.target_language,
@@ -55,7 +55,3 @@ def translate_metadata_if_enabled(metadata: MovieMetadata, settings: Settings) -
         console.print("[green]OK[/]")
     except Exception as e:
         console.print(f"[yellow]Translation failed: {e}[/]")
-
-
-
-

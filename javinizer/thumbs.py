@@ -1,19 +1,18 @@
 """Thumbnail Database Management"""
 
 import csv
-import ssl
 from pathlib import Path
 from typing import Optional, List
-import asyncio
 from dataclasses import dataclass
 
 import httpx
 from rich.console import Console
 
-from javinizer.config import load_settings, save_settings, get_config_path
-from javinizer.models import ThumbsSettings, MovieMetadata
+from javinizer.config import load_settings, get_config_path
+from javinizer.models import MovieMetadata
 
 console = Console()
+
 
 @dataclass
 class ActressProfile:
@@ -21,6 +20,7 @@ class ActressProfile:
     aliases: List[str]
     image_url: Optional[str] = None
     local_path: Optional[str] = None
+
 
 class ActressDB:
     def __init__(self):
@@ -53,20 +53,24 @@ class ActressDB:
             return
 
         try:
-            with open(self.csv_path, 'r', encoding='utf-8', newline='') as f:
+            with open(self.csv_path, "r", encoding="utf-8", newline="") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    name = row['name'].strip()
+                    name = row["name"].strip()
                     if not name:
                         continue
 
-                    aliases = [a.strip() for a in row.get('aliases', '').split('|') if a.strip()]
-                    
+                    aliases = [
+                        a.strip()
+                        for a in row.get("aliases", "").split("|")
+                        if a.strip()
+                    ]
+
                     # Handle local path - resolve relative to absolute
-                    local_path = row.get('local_path')
+                    local_path = row.get("local_path")
                     if local_path:
                         # Fix windows backslashes
-                        local_path = local_path.replace('\\', '/')
+                        local_path = local_path.replace("\\", "/")
                         try:
                             local_path_obj = Path(local_path)
                             if not local_path_obj.is_absolute():
@@ -77,8 +81,8 @@ class ActressDB:
                     profile = ActressProfile(
                         name=name,
                         aliases=aliases,
-                        image_url=row.get('image_url'),
-                        local_path=local_path
+                        image_url=row.get("image_url"),
+                        local_path=local_path,
                     )
                     self.profiles[name.lower()] = profile
 
@@ -92,35 +96,39 @@ class ActressDB:
 
     def save(self):
         """Save database to CSV"""
-        fieldnames = ['name', 'aliases', 'image_url', 'local_path']
+        fieldnames = ["name", "aliases", "image_url", "local_path"]
 
         # Ensure directory exists
         self.csv_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            with open(self.csv_path, 'w', encoding='utf-8', newline='') as f:
+            with open(self.csv_path, "w", encoding="utf-8", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
                 writer.writeheader()
                 for profile in self.profiles.values():
                     # Save local_path as relative if possible
-                    local_path_str = ''
+                    local_path_str = ""
                     if profile.local_path:
                         try:
                             abs_path = Path(profile.local_path).resolve()
                             storage_abs = self.storage_path.resolve()
                             if abs_path.is_relative_to(storage_abs):
-                                local_path_str = str(abs_path.relative_to(storage_abs)).replace('\\', '/')
+                                local_path_str = str(
+                                    abs_path.relative_to(storage_abs)
+                                ).replace("\\", "/")
                             else:
                                 local_path_str = str(abs_path)
                         except Exception:
                             local_path_str = profile.local_path
 
-                    writer.writerow({
-                        'name': profile.name,
-                        'aliases': '|'.join(profile.aliases),
-                        'image_url': profile.image_url or '',
-                        'local_path': local_path_str
-                    })
+                    writer.writerow(
+                        {
+                            "name": profile.name,
+                            "aliases": "|".join(profile.aliases),
+                            "image_url": profile.image_url or "",
+                            "local_path": local_path_str,
+                        }
+                    )
         except Exception as e:
             console.print(f"[red]Error saving actress DB: {e}[/]")
 
@@ -132,7 +140,9 @@ class ActressDB:
             return self.profiles.get(canonical_name.lower())
         return None
 
-    def add_or_update(self, name: str, image_url: str = None, alias: str = None) -> ActressProfile:
+    def add_or_update(
+        self, name: str, image_url: str = None, alias: str = None
+    ) -> ActressProfile:
         """Add new actress or update existing"""
         profile = self.find(name)
 
@@ -148,7 +158,9 @@ class ActressDB:
             return profile
 
         # Create new
-        profile = ActressProfile(name=name, aliases=[alias] if alias else [], image_url=image_url)
+        profile = ActressProfile(
+            name=name, aliases=[alias] if alias else [], image_url=image_url
+        )
         self.profiles[name.lower()] = profile
         self.alias_map[name.lower()] = name
         if alias:
@@ -176,7 +188,10 @@ class ActressDB:
         if target_file.exists():
             # Auto-repair: Update DB if path was missing or different
             try:
-                if not profile.local_path or Path(profile.local_path).resolve() != target_file.resolve():
+                if (
+                    not profile.local_path
+                    or Path(profile.local_path).resolve() != target_file.resolve()
+                ):
                     profile.local_path = str(target_file)
                     self.save()
             except Exception:
@@ -187,7 +202,9 @@ class ActressDB:
         if self.thumbs_config.download_on_sort and profile.image_url:
             success = await self._download_image(profile.image_url, target_file)
             if success:
-                profile.local_path = str(target_file) # Store absolute path in DB for reference
+                profile.local_path = str(
+                    target_file
+                )  # Store absolute path in DB for reference
                 self.save()
                 return self._map_path(target_file)
 
@@ -195,14 +212,14 @@ class ActressDB:
 
     def _map_path(self, path: Path) -> str:
         """Apply path mapping for cross-OS support"""
-        abs_path_str = str(path.resolve()).replace('\\', '/')
+        abs_path_str = str(path.resolve()).replace("\\", "/")
 
         for local_prefix, remote_prefix in self.thumbs_config.path_mapping.items():
             # Normalize prefix
-            local_prefix = local_prefix.replace('\\', '/')
+            local_prefix = local_prefix.replace("\\", "/")
             if abs_path_str.lower().startswith(local_prefix.lower()):
                 # Case-insensitive replacement of prefix
-                return remote_prefix + abs_path_str[len(local_prefix):]
+                return remote_prefix + abs_path_str[len(local_prefix) :]
 
         return str(path.resolve())
 
@@ -214,19 +231,25 @@ class ActressDB:
         verify = self.thumbs_config.verify_ssl
 
         try:
-            async with httpx.AsyncClient(proxy=proxy, verify=verify, timeout=self.settings.timeout) as client:
+            async with httpx.AsyncClient(
+                proxy=proxy, verify=verify, timeout=self.settings.timeout
+            ) as client:
                 resp = await client.get(url, follow_redirects=True)
                 resp.raise_for_status()
                 # Simple check for image content type
-                if 'image' not in resp.headers.get('content-type', ''):
-                    console.print(f"[yellow]Warning: URL did not return an image: {url}[/]")
+                if "image" not in resp.headers.get("content-type", ""):
+                    console.print(
+                        f"[yellow]Warning: URL did not return an image: {url}[/]"
+                    )
                     # Still write it? Maybe. Let's write it.
 
                 dest.write_bytes(resp.content)
                 console.print(f"[green]Downloaded thumb:[/] {dest.parent.name}")
                 return True
         except Exception as e:
-            console.print(f"[yellow]Failed to download thumb for {dest.parent.name}: {e}[/]")
+            console.print(
+                f"[yellow]Failed to download thumb for {dest.parent.name}: {e}[/]"
+            )
             return False
 
     async def process_metadata(self, metadata: MovieMetadata):
@@ -244,7 +267,7 @@ class ActressDB:
                 profile = self.add_or_update(
                     name=actress.japanese_name or actress.full_name,
                     image_url=actress.thumb_url,
-                    alias=actress.full_name if actress.japanese_name else None
+                    alias=actress.full_name if actress.japanese_name else None,
                 )
             else:
                 profile = self.find(actress.japanese_name or actress.full_name)
@@ -257,6 +280,3 @@ class ActressDB:
             await self.get_local_path(profile)
             # NOTE: We do NOT replace actress.thumb_url with local path
             # Jellyfin will download from the online URL and cache internally
-
-
-

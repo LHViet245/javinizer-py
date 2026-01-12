@@ -71,3 +71,8 @@ Thumbs.db
 
 # Secrets
 .env
+
+# Google Antigravity / AI Agent
+.agent/
+.gemini/
+*.antigravity

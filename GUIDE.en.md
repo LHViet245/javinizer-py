@@ -5,7 +5,7 @@
 ### System Requirements
 
 - **Python 3.10+**
-- **Chrome browser** (for capturing Javlibrary cookies)
+- **Google Chrome** (for capturing Javlibrary cookies)
 
 ### Quick Install
 
@@ -17,9 +17,9 @@ pip install -e .
 Or run **`install.bat`** (Windows) and choose:
 
 - **[1] Standard Install**: Normal installation.
-- **[2] Clean Install**: Fresh install (removes old venv, cache, logs) - recommended for fixing weird issues.
+- **[2] Clean Install**: Fresh install (removes old venv, cache, logs) - recommended for troubleshooting.
 
-### Installed Python Packages
+### Installed Packages
 
 | Package | Function |
 | --- | --------- |
@@ -59,7 +59,9 @@ playwright install chromium
 
 ## Main Commands
 
-### 1. Find Metadata
+### 1. Find Metadata (`find`)
+
+Search for movie metadata by ID.
 
 ```bash
 # Basic search
@@ -71,14 +73,21 @@ javinizer find IPX-486 --source dmm,r18dev
 # Use proxy (Requires Japan IP)
 javinizer find IPX-486 --proxy socks5://127.0.0.1:10808
 
-# Output NFO
+# Output NFO/JSON
 javinizer find IPX-486 --nfo
-
-# Output JSON
 javinizer find IPX-486 --json
+
+# Debug log
+javinizer find IPX-486 --verbose --log-file debug.log
 ```
 
-### 2. File Sorting
+- `--source, -s`: Scraper sources (default: all).
+- `--proxy, -p`: Proxy URL.
+- `--no-aggregate`: Disable result aggregation, use first match only.
+
+### 2. File Sorting (`sort`)
+
+Sort a video file into the specific folder structure.
 
 ```bash
 # Sort 1 file (in-place)
@@ -87,30 +96,60 @@ javinizer sort "D:/Videos/IPX-486.mp4"
 # Sort to destination
 javinizer sort "D:/Videos/IPX-486.mp4" --dest "D:/Movies"
 
-# Sort entire directory
-javinizer sort-dir "D:/Videos" --dest "D:/Movies" --recursive
-
 # Preview (dry-run)
 javinizer sort "video.mp4" --dry-run
-
-# Copy instead of move
-javinizer sort "video.mp4" --copy
 ```
 
-### 3. Update Metadata
+- `--dest, -d`: Destination folder.
+- `--source, -s`: Scraper sources.
+- `--proxy, -p`: Proxy URL.
+- `--copy`: Copy file instead of moving.
+- `--dry-run`: Preview changes without executing.
+
+### 3. Batch Sort (`sort-dir`)
+
+Scan and sort all videos in a directory.
+
+```bash
+# Sort entire directory
+javinizer sort-dir "D:/Videos" --dest "D:/Movies" --recursive
+```
+
+- `--dest, -d`: Destination folder (Required).
+- `--recursive, -r`: Scan subdirectories.
+- `--min-size`: Minimum file size (MB) to process (default: 100).
+- `--source, -s`: Scraper sources.
+- `--proxy, -p`: Proxy URL.
+
+### 4. Update Metadata (`update`)
+
+Refresh metadata for an existing sorted folder.
 
 ```bash
 # Update sorted folder
 javinizer update "D:/Movies/SDDE-761"
 
-# Update entire directory
-javinizer update-dir "D:/Movies" --recursive
-
 # Only update NFO (skip images)
 javinizer update "D:/Movies/SDDE-761" --nfo-only
 ```
 
-### 4. Thumbnail Database Management
+- `--source, -s`: Scraper sources.
+- `--proxy, -p`: Proxy URL.
+- `--nfo-only`: Only regenerate NFO.
+- `--dry-run`: Preview changes.
+
+### 5. Batch Update (`update-dir`)
+
+Update all movie folders in a directory.
+
+```bash
+javinizer update-dir "D:/Movies" --recursive
+```
+
+- `--recursive, -r`: Scan subdirectories.
+- `--nfo-only`: Only update NFOs.
+
+### 6. Thumbnail Database (`thumbs`)
 
 ```bash
 # List actresses
@@ -123,7 +162,7 @@ javinizer thumbs list --filter "Yua"
 javinizer thumbs update
 ```
 
-### 5. Configuration
+### 7. Configuration (`config`)
 
 ```bash
 # Show config
@@ -135,18 +174,13 @@ javinizer config set-proxy socks5://127.0.0.1:10808
 # Disable proxy
 javinizer config set-proxy --disable
 
-# Change sort format
-javinizer config set-sort-format --folder "<ID> - <TITLE>"
-javinizer config set-sort-format --file "<ID>"
-
-# Debug error logging
-javinizer find IPX-486 --verbose
-javinizer find IPX-486 --log-file javinizer.log
+# Capture Javlibrary cookies (Browser)
+javinizer config get-javlibrary-cookies
 ```
 
 ---
 
-## Configuration File (jvSettings.json)
+## Configuration (jvSettings.json)
 
 Settings are stored in `javinizer-py/jvSettings.json`.
 
@@ -157,6 +191,8 @@ Settings are stored in `javinizer-py/jvSettings.json`.
   "scraper_dmm": true,
   "scraper_r18dev": true,
   "scraper_javlibrary": true,
+
+  "log_file": "javinizer.log",
 
   "proxy": {
     "enabled": true,
@@ -196,7 +232,7 @@ Javinizer supports translating titles and descriptions from Japanese to other la
 | `google` | ✅ Yes | Good | Default, no API key required |
 | `deepl` | Free tier | Very Good | Requires API key from deepl.com |
 
-### Translation Config
+### Configuration
 
 ```json
 "translation": {
@@ -234,7 +270,7 @@ javinizer config get-javlibrary-cookies
 javinizer config get-javlibrary-cookies --proxy socks5://127.0.0.1:10808
 ```
 
-> 💡 **Tip**: If you run a scrape command and get blocked, the tool will **automatically** suggest the exact command you need to run (including proxy if configured). Just copy-paste it!
+> 💡 **Tip**: If you run a scrape command and get blocked, the tool will **automatically** suggest the exact command you need to run.
 
 > ⚠️ **NOTE**: Cloudflare cookies are tied to IP! You must use the SAME proxy when capturing cookies and when scraping.
 
@@ -243,24 +279,6 @@ javinizer config get-javlibrary-cookies --proxy socks5://127.0.0.1:10808
 ```bash
 javinizer find SDDE-761 --source javlibrary
 ```
-
----
-
-## Data Sources (Scrapers)
-
-| Source | Proxy Required | Notes |
-|-------|---------------|---------|
-| `r18dev` | Yes (Japan IP) | JSON API, fast, **recommended** |
-| `dmm_new` | Yes | Uses Playwright, high quality |
-| `dmm` | Yes | Old site, fallback |
-| `javlibrary` | Yes + Cookies | Requires Cloudflare bypass |
-
-### Scraper Alias
-
-When you specify `--source dmm`, it automatically expands to `dmm_new, dmm`:
-
-- Tries `dmm_new` first (if Playwright is installed)
-- Fallback to `dmm` if it fails
 
 ---
 
@@ -283,7 +301,7 @@ javinizer-py/
             └── folder.jpg
 ```
 
-> 🛡️ **Portable Feature**: Image paths are stored as **relative paths**. You can freely copy the `thumbs` folder to another machine or drive. The tool will automatically fix paths when running `update` if it detects existing images.
+> 🛡️ **Portable Feature**: Image paths are stored as **relative paths**. You can freely copy the `thumbs` folder to another machine or drive.
 
 ---
 
@@ -318,12 +336,3 @@ D:/Movies/
     cover.jpg       ← Poster (cropped)
     backdrop.jpg    ← Full cover
 ```
-
----
-
-## Important Notes
-
-1. **Japan IP Required**: All sources require a Japanese proxy.
-2. **Javlibrary**: Cookies are IP-bound.
-3. **Translation**: May be slow over SOCKS proxy.
-4. **Aggregation**: Use `--source r18dev,dmm` to combine metadata from multiple sources.

@@ -46,7 +46,11 @@ class TestCLI:
         """Test config show command runs without error"""
         result = runner.invoke(main, ["config", "show"])
         # Should not crash, may have exit code 0 or show config
-        assert result.exit_code == 0 or "Configuration" in result.output or "Config" in result.output
+        assert (
+            result.exit_code == 0
+            or "Configuration" in result.output
+            or "Config" in result.output
+        )
 
     def test_thumbs_help(self, runner):
         """Test thumbs command help"""
@@ -71,7 +75,11 @@ class TestFindCommand:
         """Test that find without ID shows error"""
         result = runner.invoke(main, ["find"])
         # Should fail because MOVIE_ID is required
-        assert result.exit_code != 0 or "Missing argument" in result.output or "Usage" in result.output
+        assert (
+            result.exit_code != 0
+            or "Missing argument" in result.output
+            or "Usage" in result.output
+        )
 
 
 class TestConfigCommand:

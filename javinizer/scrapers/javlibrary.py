@@ -60,10 +60,10 @@ class JavlibraryScraper(BaseScraper):
         """Check if response is a Cloudflare challenge"""
         if response.status_code == 403:
             headers = dict(response.headers)
-            if 'cf-ray' in headers or 'cf-cache-status' in headers:
+            if "cf-ray" in headers or "cf-cache-status" in headers:
                 return True
         if response.status_code == 503:
-            if 'challenge' in response.text.lower() or 'cf-' in response.text.lower():
+            if "challenge" in response.text.lower() or "cf-" in response.text.lower():
                 return True
         return False
 
@@ -98,8 +98,10 @@ class JavlibraryScraper(BaseScraper):
 
             response.raise_for_status()
         except Exception as e:
-            if '403' in str(e):
-                logger.warning("Javlibrary returned 403 Forbidden (Cloudflare protection likely).")
+            if "403" in str(e):
+                logger.warning(
+                    "Javlibrary returned 403 Forbidden (Cloudflare protection likely)."
+                )
             else:
                 logger.error(f"Error searching Javlibrary: {e}", exc_info=True)
             return None
@@ -112,7 +114,7 @@ class JavlibraryScraper(BaseScraper):
         soup = BeautifulSoup(response.content, "lxml")
 
         # Look for exact match in results
-        movie_id_upper = movie_id.upper().replace("-", "")
+        # movie_id_upper = movie_id.upper().replace("-", "")
 
         # Use response URL as base for relative links (handles ./? correctly)
         base_for_join = str(response.url)
@@ -149,8 +151,8 @@ class JavlibraryScraper(BaseScraper):
         # Check for Cloudflare challenge - real challenge pages are short and have specific markers
         # Normal pages may have "challenge-platform" in Cloudflare scripts but are NOT challenge pages
         is_cf_challenge = (
-            len(html) < 10000 and  # Challenge pages are typically short
-            ("cf-browser-verification" in html or "Just a moment" in html)
+            len(html) < 10000  # Challenge pages are typically short
+            and ("cf-browser-verification" in html or "Just a moment" in html)
         )
         if is_cf_challenge:
             self._print_cf_help()
@@ -250,7 +252,9 @@ class JavlibraryScraper(BaseScraper):
                 continue
 
             # Check if name is Japanese
-            is_japanese = bool(re.search(r'[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]', name))
+            is_japanese = bool(
+                re.search(r"[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]", name)
+            )
 
             if is_japanese:
                 actress = Actress(japanese_name=name)

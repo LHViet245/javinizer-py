@@ -52,6 +52,7 @@ def load_settings(config_path: Optional[Path] = None) -> Settings:
     except json.JSONDecodeError as e:
         from rich.console import Console
         from javinizer.logger import get_logger
+
         logger = get_logger(__name__)
         logger.warning(f"Invalid JSON in config {config_path}: {e}")
         Console().print(f"[yellow]Warning: Invalid JSON in config file: {e}[/]")
@@ -60,11 +61,13 @@ def load_settings(config_path: Optional[Path] = None) -> Settings:
         # Catch Pydantic ValidationError and other unexpected errors
         from rich.console import Console
         from javinizer.logger import get_logger
+
         logger = get_logger(__name__)
         logger.warning(f"Config load failed for {config_path}: {e}")
-        Console().print(f"[yellow]Warning: Could not load config from {config_path}: {e}[/]")
+        Console().print(
+            f"[yellow]Warning: Could not load config from {config_path}: {e}[/]"
+        )
         return Settings()
-
 
 
 def save_settings(settings: Settings, config_path: Optional[Path] = None) -> Path:
@@ -99,7 +102,9 @@ def create_default_config(config_path: Optional[Path] = None) -> Path:
     return save_settings(settings, config_path)
 
 
-def update_proxy(proxy_url: Optional[str], config_path: Optional[Path] = None) -> Settings:
+def update_proxy(
+    proxy_url: Optional[str], config_path: Optional[Path] = None
+) -> Settings:
     """
     Update proxy settings
 

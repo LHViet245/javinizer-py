@@ -5,7 +5,7 @@
 ### 系统要求
 
 - **Python 3.10+**
-- **Chrome 浏览器** (用于获取 Javlibrary cookie)
+- **Google Chrome** (用于获取 Javlibrary cookie)
 
 ### 快速安装
 
@@ -48,18 +48,20 @@ playwright install chromium
 
 | 功能 | 状态 | 描述 |
 |-----------|------------|-------|
-| **刮削器 (Scrapers)** | ✅ | DMM, DMM New, R18Dev, Javlibrary |
-| **文件整理 (Sorting)** | ✅ | 将视频整理到含有元数据的文件夹中 |
-| **更新系统 (Update)** | ✅ | 更新已整理文件夹的元数据 |
-| **缩略图数据库** | ✅ | 本地女优图片数据库 |
-| **翻译 (Translation)** | ✅ | 将标题翻译为 EN/VI/ZH... |
-| **代理支持 (Proxy)** | ✅ | HTTP 和 SOCKS5 |
+| **Scrapers** | ✅ | DMM, DMM New, R18Dev, Javlibrary |
+| **File Sorting** | ✅ | 将视频整理到含有元数据的文件夹中 |
+| **Update System** | ✅ | 更新已整理文件夹的元数据 |
+| **Thumbnail DB** | ✅ | 本地女优图片数据库 |
+| **Translation** | ✅ | 将标题翻译为 EN/VI/ZH... |
+| **Proxy Support** | ✅ | HTTP 和 SOCKS5 |
 
 ---
 
 ## 主要命令
 
-### 1. 查找元数据
+### 1. 查找元数据 (`find`)
+
+按番号搜索元数据。
 
 ```bash
 # 基本搜索
@@ -71,14 +73,21 @@ javinizer find IPX-486 --source dmm,r18dev
 # 使用代理 (需要日本 IP)
 javinizer find IPX-486 --proxy socks5://127.0.0.1:10808
 
-# 输出 NFO
+# 输出 NFO/JSON
 javinizer find IPX-486 --nfo
-
-# 输出 JSON
 javinizer find IPX-486 --json
+
+# 调试日志
+javinizer find IPX-486 --verbose --log-file debug.log
 ```
 
-### 2. 视频整理 (File Sorting)
+- `--source, -s`: 数据源 (默认: 全部)。
+- `--proxy, -p`: 代理 URL。
+- `--no-aggregate`: 禁用结果聚合，仅使用第一个匹配项。
+
+### 2. 视频整理 (`sort`)
+
+将视频文件整理到带元数据和图片的标准文件夹中。
 
 ```bash
 # 整理单个文件 (原地整理)
@@ -87,30 +96,60 @@ javinizer sort "D:/Videos/IPX-486.mp4"
 # 整理到目标目录
 javinizer sort "D:/Videos/IPX-486.mp4" --dest "D:/Movies"
 
-# 整理整个目录
-javinizer sort-dir "D:/Videos" --dest "D:/Movies" --recursive
-
 # 预览 (不进行实际更改)
 javinizer sort "video.mp4" --dry-run
-
-# 复制而不是移动
-javinizer sort "video.mp4" --copy
 ```
 
-### 3. 更新元数据 (Update)
+- `--dest, -d`: 目标文件夹。
+- `--source, -s`: 数据源。
+- `--proxy, -p`: 代理 URL。
+- `--copy`: 复制而不是移动。
+- `--dry-run`: 预览更改。
+
+### 3. 批量整理 (`sort-dir`)
+
+递归扫描并整理目录下的所有视频。
+
+```bash
+# 整理整个目录
+javinizer sort-dir "D:/Videos" --dest "D:/Movies" --recursive
+```
+
+- `--dest, -d`: 目标目录 (必须)。
+- `--recursive, -r`: 包含子目录。
+- `--min-size`: 最小文件大小 (MB)，默认 100。
+- `--source, -s`: 数据源。
+- `--proxy, -p`: 代理 URL。
+
+### 4. 更新元数据 (`update`)
+
+刷新现有影片文件夹的元数据。
 
 ```bash
 # 更新已整理的文件夹
 javinizer update "D:/Movies/SDDE-761"
 
-# 更新整个目录
-javinizer update-dir "D:/Movies" --recursive
-
 # 仅更新 NFO (跳过图片)
 javinizer update "D:/Movies/SDDE-761" --nfo-only
 ```
 
-### 4. 缩略图数据库管理
+- `--source, -s`: 数据源。
+- `--proxy, -p`: 代理 URL。
+- `--nfo-only`: 仅重新生成 NFO。
+- `--dry-run`: 预览更改。
+
+### 5. 批量更新 (`update-dir`)
+
+更新目录下的所有影片文件夹。
+
+```bash
+javinizer update-dir "D:/Movies" --recursive
+```
+
+- `--recursive, -r`: 包含子目录。
+- `--nfo-only`: 仅更新 NFO。
+
+### 6. 缩略图数据库管理 (`thumbs`)
 
 ```bash
 # 列出女优
@@ -123,7 +162,7 @@ javinizer thumbs list --filter "Yua"
 javinizer thumbs update
 ```
 
-### 5. 配置
+### 7. 配置 (`config`)
 
 ```bash
 # 显示配置
@@ -135,20 +174,15 @@ javinizer config set-proxy socks5://127.0.0.1:10808
 # 禁用代理
 javinizer config set-proxy --disable
 
-# 更改整理格式
-javinizer config set-sort-format --folder "<ID> - <TITLE>"
-javinizer config set-sort-format --file "<ID>"
-
-# 调试/错误日志
-javinizer find IPX-486 --verbose
-javinizer find IPX-486 --log-file javinizer.log
+# 获取 Javlibrary Cookie (浏览器)
+javinizer config get-javlibrary-cookies
 ```
 
 ---
 
 ## 配置文件 (jvSettings.json)
 
-配置保存在 `javinizer-py/jvSettings.json`.
+配置保存在 `javinizer-py/jvSettings.json`。
 
 ### 主要部分
 
@@ -157,6 +191,8 @@ javinizer find IPX-486 --log-file javinizer.log
   "scraper_dmm": true,
   "scraper_r18dev": true,
   "scraper_javlibrary": true,
+
+  "log_file": "javinizer.log",
 
   "proxy": {
     "enabled": true,
@@ -234,7 +270,7 @@ javinizer config get-javlibrary-cookies
 javinizer config get-javlibrary-cookies --proxy socks5://127.0.0.1:10808
 ```
 
-> 💡 **提示**: 如果你在刮削时被拦截，工具会 **自动** 提示你需要运行的确切命令 (包含代理配置)。直接复制粘贴即可！
+> 💡 **提示**: 如果你在刮削时被拦截，工具会 **自动** 提示你需要运行的确切命令。
 
 > ⚠️ **注意**: Cloudflare cookie 与 IP 绑定！获取 cookie 和刮削时必须使用相同的代理。
 
@@ -243,24 +279,6 @@ javinizer config get-javlibrary-cookies --proxy socks5://127.0.0.1:10808
 ```bash
 javinizer find SDDE-761 --source javlibrary
 ```
-
----
-
-## 数据源 (Scrapers)
-
-| 来源 | 需要代理 | 备注 |
-|-------|---------------|---------|
-| `r18dev` | 是 (日本 IP) | JSON API, 速度快, **推荐** |
-| `dmm_new` | 是 | 使用 Playwright, 高质量 |
-| `dmm` | 是 | 旧版网站, 后备方案 |
-| `javlibrary` | 是 + Cookies | 需要绕过 Cloudflare |
-
-### 刮削器别名 (Alias)
-
-当你指定 `--source dmm` 时，它会自动扩展为 `dmm_new, dmm`：
--首 试 `dmm_new` (如果安装了 Playwright)
-
-- 失败则回退到 `dmm`
 
 ---
 
@@ -283,7 +301,7 @@ javinizer-py/
             └── folder.jpg
 ```
 
-> 🛡️ **便携特性 (Portable)**: 图片路径以 **相对路径** 存储。你可以自由地将 `thumbs` 文件夹复制到其他机器或硬盘。运行 `update` 命令时，如果检测到现有图片，工具会自动修复路径。
+> 🛡️ **便携特性 (Portable)**: 图片路径以 **相对路径** 存储。你可以自由地将 `thumbs` 文件夹复制到其他机器或硬盘。
 
 ---
 
@@ -318,12 +336,3 @@ D:/Movies/
     cover.jpg       ← 海报 (裁剪后)
     backdrop.jpg    ← 完整封面
 ```
-
----
-
-## 重要提示
-
-1. **需要日本 IP**: 所有来源都需要日本代理。
-2. **Javlibrary**: Cookies 与 IP 绑定。
-3. **翻译**: 通过 SOCKS 代理时可能会很慢。
-4. **聚合**: 使用 `--source r18dev,dmm` 来合并多个来源的元数据。

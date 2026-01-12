@@ -8,6 +8,7 @@ import httpx
 
 from javinizer.models import MovieMetadata, ProxyConfig
 from javinizer.logger import get_logger
+from javinizer.http.rate_limiter import DomainRateLimiter, get_rate_limiter
 
 logger = get_logger(__name__)
 
@@ -17,7 +18,7 @@ logger = get_logger(__name__)
 def _create_legacy_ssl_context() -> ssl.SSLContext:
     """
     Create SSL context for legacy servers requiring insecure connections.
-    
+
     WARNING: Only use when absolutely necessary (e.g., legacy server endpoints).
     This disables certificate verification and is vulnerable to MITM attacks.
     """
@@ -30,8 +31,10 @@ def _create_legacy_ssl_context() -> ssl.SSLContext:
         pass
     return ctx
 
+
 # Lazy-initialized legacy context (only created if needed)
 _LEGACY_SSL_CONTEXT: Optional[ssl.SSLContext] = None
+
 
 def get_legacy_ssl_context() -> ssl.SSLContext:
     """Get or create the legacy SSL context."""
@@ -40,6 +43,7 @@ def get_legacy_ssl_context() -> ssl.SSLContext:
         _LEGACY_SSL_CONTEXT = _create_legacy_ssl_context()
         logger.warning("Using insecure SSL context - certificate verification disabled")
     return _LEGACY_SSL_CONTEXT
+
 
 # Default user agent
 DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -58,6 +62,7 @@ class BaseScraper(ABC):
         cookies: Optional[dict[str, str]] = None,
         user_agent: Optional[str] = None,
         verify_ssl: bool = True,
+        rate_limiter: Optional[DomainRateLimiter] = None,
     ):
         """
         Initialize scraper with optional proxy and cookie support
@@ -69,12 +74,14 @@ class BaseScraper(ABC):
             user_agent: Custom user agent string
             verify_ssl: Enable SSL certificate verification (default: True).
                         Set to False only for legacy servers with SSL issues.
+            rate_limiter: Optional rate limiter instance (uses global if None)
         """
         self.timeout = timeout
         self.proxy = proxy
         self.cookies = cookies or {}
         self.user_agent = user_agent or DEFAULT_USER_AGENT
         self.verify_ssl = verify_ssl
+        self.rate_limiter = rate_limiter
         self._client: Optional[httpx.Client] = None
 
     def _get_proxy_url(self) -> Optional[str]:
@@ -104,22 +111,29 @@ class BaseScraper(ABC):
                         impersonate="chrome124",  # Match modern Chrome
                         headers=headers,
                         cookies=self.cookies,
-                        proxies={"http": proxy_url, "https": proxy_url} if proxy_url else None,
+                        proxies={"http": proxy_url, "https": proxy_url}
+                        if proxy_url
+                        else None,
                         timeout=self.timeout,
                         allow_redirects=True,
                         verify=self.verify_ssl,
                     )
                     return self._client
                 except ImportError as e:
-                    logger.debug(f"curl_cffi not available: {e}. Falling back to httpx.")
+                    logger.debug(
+                        f"curl_cffi not available: {e}. Falling back to httpx."
+                    )
                     use_httpx = True
                 except Exception as e:
-                    logger.warning(f"curl_cffi initialization failed: {e}. Falling back to httpx.")
+                    logger.warning(
+                        f"curl_cffi initialization failed: {e}. Falling back to httpx."
+                    )
                     use_httpx = True
 
             if use_httpx:
                 # Fallback to httpx (better SOCKS support)
                 import httpx
+
                 client_kwargs = {
                     "timeout": self.timeout,
                     "headers": {"User-Agent": self.user_agent},
@@ -131,7 +145,9 @@ class BaseScraper(ABC):
                     client_kwargs["verify"] = self.verify_ssl
                 else:
                     # Use legacy context only if SSL verification is disabled
-                    client_kwargs["verify"] = True if self.verify_ssl else get_legacy_ssl_context()
+                    client_kwargs["verify"] = (
+                        True if self.verify_ssl else get_legacy_ssl_context()
+                    )
 
                 self._client = httpx.Client(**client_kwargs)
 
@@ -173,5 +189,9 @@ class BaseScraper(ABC):
         url = self.get_movie_url(movie_id)
         if url is None:
             return None
-        return self.scrape(url)
 
+        # Apply rate limiting before making request
+        limiter = self.rate_limiter or get_rate_limiter()
+        limiter.acquire(url)
+
+        return self.scrape(url)

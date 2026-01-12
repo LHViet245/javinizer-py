@@ -6,26 +6,36 @@ from typing import Optional
 
 
 # Supported video extensions
-VIDEO_EXTENSIONS = {'.mp4', '.mkv', '.avi', '.wmv', '.mov', '.flv', '.m4v', '.rmvb', '.asf'}
+VIDEO_EXTENSIONS = {
+    ".mp4",
+    ".mkv",
+    ".avi",
+    ".wmv",
+    ".mov",
+    ".flv",
+    ".m4v",
+    ".rmvb",
+    ".asf",
+}
 
 # Supported subtitle extensions
-SUBTITLE_EXTENSIONS = {'.srt', '.ass', '.ssa', '.sub', '.vtt'}
+SUBTITLE_EXTENSIONS = {".srt", ".ass", ".ssa", ".sub", ".vtt"}
 
 # Common JAV ID patterns
 # Pattern examples: ABC-123, ABC123, T28-123, SSNI-486, 1PONDO-123456_789
 JAV_ID_PATTERNS = [
     # Standard format: ABC-123 or ABC-1234
-    r'([a-zA-Z]{2,10})-?(\d{2,5})',
+    r"([a-zA-Z]{2,10})-?(\d{2,5})",
     # With prefix number: 1ABC-123
-    r'(\d)?([a-zA-Z]{2,10})-?(\d{2,5})',
+    r"(\d)?([a-zA-Z]{2,10})-?(\d{2,5})",
     # Special studios: T28-123, S1-123
-    r'([a-zA-Z]\d+)-(\d{2,5})',
+    r"([a-zA-Z]\d+)-(\d{2,5})",
     # FC2: FC2-PPV-1234567 or FC2PPV-1234567
-    r'(FC2)[-_]?(PPV)?[-_]?(\d{5,7})',
+    r"(FC2)[-_]?(PPV)?[-_]?(\d{5,7})",
     # HEYZO: HEYZO-1234
-    r'(HEYZO)[-_]?(\d{4})',
+    r"(HEYZO)[-_]?(\d{4})",
     # Caribbeancom: 123456-789
-    r'(\d{6})-(\d{3})',
+    r"(\d{6})-(\d{3})",
 ]
 
 
@@ -51,27 +61,27 @@ def extract_movie_id(filename: str) -> Optional[str]:
     name = Path(filename).stem
 
     # Remove common prefixes like [SubGroup], (Year), etc.
-    name = re.sub(r'\[[^\]]*\]', '', name)
-    name = re.sub(r'\([^)]*\)', '', name)
+    name = re.sub(r"\[[^\]]*\]", "", name)
+    name = re.sub(r"\([^)]*\)", "", name)
     name = name.strip()
 
     # Try FC2 pattern FIRST (before standard pattern catches it)
-    fc2_match = re.search(r'FC2[-_]?(?:PPV)?[-_]?(\d{5,7})', name, re.IGNORECASE)
+    fc2_match = re.search(r"FC2[-_]?(?:PPV)?[-_]?(\d{5,7})", name, re.IGNORECASE)
     if fc2_match:
         return f"FC2-PPV-{fc2_match.group(1)}"
 
     # Try HEYZO pattern
-    heyzo_match = re.search(r'HEYZO[-_]?(\d{4})', name, re.IGNORECASE)
+    heyzo_match = re.search(r"HEYZO[-_]?(\d{4})", name, re.IGNORECASE)
     if heyzo_match:
         return f"HEYZO-{heyzo_match.group(1)}"
 
     # Try Caribbeancom pattern (123456-789) before standard
-    carib_match = re.search(r'(\d{6})[-_](\d{3})', name)
+    carib_match = re.search(r"(\d{6})[-_](\d{3})", name)
     if carib_match:
         return f"{carib_match.group(1)}-{carib_match.group(2)}"
 
     # Try special studios: T28-123, S1-123 (Letter + Digits)
-    special_match = re.search(r'\b([a-zA-Z]\d+)[-_]?(\d{2,5})', name, re.IGNORECASE)
+    special_match = re.search(r"\b([a-zA-Z]\d+)[-_]?(\d{2,5})", name, re.IGNORECASE)
     if special_match:
         prefix = special_match.group(1).upper()
         number = special_match.group(2)
@@ -79,10 +89,10 @@ def extract_movie_id(filename: str) -> Optional[str]:
 
     # Try standard JAV pattern (most common)
     # Match: ABC-123, ABC123, SSNI-486, etc.
-    standard_match = re.search(r'([a-zA-Z]{2,10})[-_]?(\d{2,5})', name, re.IGNORECASE)
+    standard_match = re.search(r"([a-zA-Z]{2,10})[-_]?(\d{2,5})", name, re.IGNORECASE)
     if standard_match:
         prefix = standard_match.group(1).upper()
-        number = standard_match.group(2).lstrip('0') or '0'
+        number = standard_match.group(2).lstrip("0") or "0"
         return f"{prefix}-{number}"
 
     return None
@@ -107,23 +117,21 @@ def normalize_movie_id(movie_id: str) -> str:
     movie_id = movie_id.upper().strip()
 
     # Already has hyphen
-    if '-' in movie_id:
+    if "-" in movie_id:
         return movie_id
 
     # Split letters and numbers
-    match = re.match(r'([A-Z]+)(\d+)', movie_id)
+    match = re.match(r"([A-Z]+)(\d+)", movie_id)
     if match:
         prefix = match.group(1)
-        number = match.group(2).lstrip('0') or '0'
+        number = match.group(2).lstrip("0") or "0"
         return f"{prefix}-{number}"
 
     return movie_id
 
 
 def find_video_files(
-    directory: Path,
-    recursive: bool = False,
-    min_size_mb: int = 0
+    directory: Path, recursive: bool = False, min_size_mb: int = 0
 ) -> list[Path]:
     """
     Find all video files in a directory.
@@ -142,7 +150,7 @@ def find_video_files(
     min_size_bytes = min_size_mb * 1024 * 1024
     videos = []
 
-    pattern = '**/*' if recursive else '*'
+    pattern = "**/*" if recursive else "*"
 
     for path in directory.glob(pattern):
         if path.is_file() and path.suffix.lower() in VIDEO_EXTENSIONS:
@@ -200,12 +208,12 @@ def get_subtitle_language(subtitle_path: Path) -> Optional[str]:
         'vi'
     """
     stem = subtitle_path.stem
-    parts = stem.rsplit('.', 1)
+    parts = stem.rsplit(".", 1)
 
     if len(parts) == 2:
         lang = parts[1].lower()
         # Common language codes
-        if len(lang) == 2 or len(lang) == 3 or lang in {'zh-hans', 'zh-hant', 'pt-br'}:
+        if len(lang) == 2 or len(lang) == 3 or lang in {"zh-hans", "zh-hant", "pt-br"}:
             return lang
 
     return None

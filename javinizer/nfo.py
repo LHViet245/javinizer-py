@@ -1,6 +1,5 @@
 """NFO XML generator for Jellyfin/Kodi/Plex/Emby compatibility"""
 
-from pathlib import Path
 from xml.etree import ElementTree as ET
 from xml.dom import minidom
 from typing import Optional
@@ -14,12 +13,7 @@ def escape_xml_chars(text: str) -> str:
         return ""
     # Only escape characters that are invalid in XML content
     # Note: / is valid in XML and should NOT be escaped
-    return (
-        text
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def generate_nfo(
@@ -27,7 +21,7 @@ def generate_nfo(
     add_generic_role: bool = True,
     poster_filename: Optional[str] = "cover.jpg",
     backdrop_filename: Optional[str] = "backdrop.jpg",
-    use_japanese_names: bool = False
+    use_japanese_names: bool = False,
 ) -> str:
     """
     Generate Jellyfin/Kodi compatible NFO XML string from movie metadata.
@@ -47,7 +41,11 @@ def generate_nfo(
 
     # Title - use plain title for Jellyfin (display_name includes [ID] prefix)
     _add_element(movie, "title", escape_xml_chars(metadata.title))
-    _add_element(movie, "originaltitle", escape_xml_chars(metadata.original_title or metadata.title))
+    _add_element(
+        movie,
+        "originaltitle",
+        escape_xml_chars(metadata.original_title or metadata.title),
+    )
 
     # Plot/Description
     _add_element(movie, "plot", escape_xml_chars(metadata.description or ""))
@@ -121,7 +119,9 @@ def generate_nfo(
         thumb_elem.text = backdrop_filename
 
     # Unique IDs - important for Jellyfin to identify the media
-    uniqueid_elem = ET.SubElement(movie, "uniqueid", {"type": "javid", "default": "true"})
+    uniqueid_elem = ET.SubElement(
+        movie, "uniqueid", {"type": "javid", "default": "true"}
+    )
     uniqueid_elem.text = metadata.id
 
     if metadata.content_id:

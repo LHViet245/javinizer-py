@@ -3,6 +3,7 @@
 import click
 from rich.table import Table
 
+from typing import Optional
 from javinizer.cli_common import console
 
 
@@ -16,7 +17,6 @@ def thumbs():
 @click.option("--filter", "-f", help="Filter by name")
 def thumbs_list(filter: Optional[str]):
     """List actresses in database"""
-    from typing import Optional
     from javinizer.thumbs import ActressDB
 
     db = ActressDB()
@@ -42,7 +42,7 @@ def thumbs_list(filter: Optional[str]):
             p.name,
             ", ".join(p.aliases[:3]),
             "[green]Yes[/]" if p.image_url else "[red]No[/]",
-            "[green]Yes[/]" if p.local_path else "[dim]No[/]"
+            "[green]Yes[/]" if p.local_path else "[dim]No[/]",
         )
 
     console.print(table)
@@ -61,7 +61,7 @@ def thumbs_update(force: bool):
     console.print(f"[cyan]Loaded DB with {len(db.profiles)} actresses[/]")
 
     async def run_update():
-        tasks = []
+        # tasks = []
         sem = asyncio.Semaphore(5)  # Limit concurrency
 
         async def process(profile):
@@ -72,7 +72,9 @@ def thumbs_update(force: bool):
                 await db.get_local_path(profile)
 
         with console.status("[bold green]Updating thumbnails...[/]"):
-            await asyncio.gather(*[process(p) for p in db.profiles.values() if p.image_url])
+            await asyncio.gather(
+                *[process(p) for p in db.profiles.values() if p.image_url]
+            )
 
     asyncio.run(run_update())
     console.print("[green]Update complete![/]")
