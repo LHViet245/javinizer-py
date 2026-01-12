@@ -10,10 +10,9 @@ from rich.console import Console
 # Create centralized console (shared with CLI)
 console = Console()
 
+
 def configure_logging(
-    verbose: bool = False,
-    log_file: Optional[str] = None,
-    console_output: bool = False
+    verbose: bool = False, log_file: Optional[str] = None, console_output: bool = False
 ) -> logging.Logger:
     """
     Configure global logging
@@ -37,14 +36,14 @@ def configure_logging(
             file_path = Path(log_file)
             # Ensure directory exists
             file_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             file_handler = logging.FileHandler(file_path, encoding="utf-8")
             file_handler.setLevel(logging.DEBUG)  # Always log everything to file
-            
+
             # Format: Time - Level - Module:Line - Message
             formatter = logging.Formatter(
                 "%(asctime)s - %(levelname)s - %(name)s:%(lineno)d - %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S"
+                datefmt="%Y-%m-%d %H:%M:%S",
             )
             file_handler.setFormatter(formatter)
             root_logger.addHandler(file_handler)
@@ -61,7 +60,7 @@ def configure_logging(
             show_time=False,
             show_path=False,
             rich_tracebacks=True,
-            markup=True
+            markup=True,
         )
         rich_handler.setLevel(logging.DEBUG if verbose else logging.INFO)
         root_logger.addHandler(rich_handler)
@@ -73,6 +72,7 @@ def configure_logging(
     logging.getLogger("undetected_chromedriver").setLevel(logging.WARNING)
 
     return root_logger
+
 
 def get_logger(name: str) -> logging.Logger:
     """Get a child logger for a module"""

@@ -1,13 +1,10 @@
 """Tests for scraper modules - uses saved HTML fixtures, no live network"""
 
-import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 from datetime import date
 
 from javinizer.scrapers.dmm import DMMScraper
 from javinizer.scrapers.r18dev import R18DevScraper
-from javinizer.models import Actress
 
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
@@ -69,11 +66,17 @@ class TestDMMScraper:
         """Test that promotional text is rejected"""
         scraper = DMMScraper()
         # Reject promotional markers
-        assert scraper._is_valid_actress_name("★アダルトブック「桃乃木かな写真集」の商品ご購入はこちらから★") is False
+        assert (
+            scraper._is_valid_actress_name(
+                "★アダルトブック「桃乃木かな写真集」の商品ご購入はこちらから★"
+            )
+            is False
+        )
         # Reject text with purchase links
         assert scraper._is_valid_actress_name("商品ご購入はこちら") is False
         # Reject very long strings
         assert scraper._is_valid_actress_name("A" * 50) is False
+
 
 class TestR18DevScraper:
     """Test R18Dev JSON API scraper"""
@@ -109,7 +112,7 @@ class TestR18DevScraper:
                 {
                     "name_romaji": "Momo Sakura",
                     "name_kanji": "桜もも",
-                    "image_url": "http://example.com/thumb.jpg"
+                    "image_url": "http://example.com/thumb.jpg",
                 }
             ]
         }
@@ -118,7 +121,6 @@ class TestR18DevScraper:
         assert actresses[0].japanese_name == "桜もも"
         assert actresses[0].first_name == "Momo"
         assert actresses[0].last_name == "Sakura"
-
 
     def test_parse_actresses_empty(self):
         """Test actress parsing with no actresses"""
@@ -133,31 +135,24 @@ class TestR18DevScraper:
         mock_data = {
             "categories": [
                 {"name_en": "Beautiful Girl", "name_ja": "美少女"},
-                {"name_en": "Featured Actress", "name_ja": "出演女優"}
+                {"name_en": "Featured Actress", "name_ja": "出演女優"},
             ]
         }
         genres = scraper._parse_genres(mock_data)
         assert "Beautiful Girl" in genres
         assert "Featured Actress" in genres
 
-
     def test_get_title_prefers_english(self):
         """Test title extraction prefers English"""
         scraper = R18DevScraper()
-        mock_data = {
-            "title": "English Title",
-            "title_ja": "日本語タイトル"
-        }
+        mock_data = {"title": "English Title", "title_ja": "日本語タイトル"}
         title = scraper._get_title(mock_data)
         assert title == "English Title"
 
     def test_get_title_fallback_to_japanese(self):
         """Test title fallback to Japanese when English not available"""
         scraper = R18DevScraper()
-        mock_data = {
-            "title": "",
-            "title_ja": "日本語タイトル"
-        }
+        mock_data = {"title": "", "title_ja": "日本語タイトル"}
         title = scraper._get_title(mock_data)
         assert title == "日本語タイトル"
 

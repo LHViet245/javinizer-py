@@ -21,24 +21,26 @@ def config_show():
     settings = load_settings()
     config_path = get_config_path()
 
-    console.print(Panel.fit(
-        f"[bold]Configuration[/]\n"
-        f"Path: {config_path}\n"
-        f"\n"
-        f"[cyan]Scrapers:[/]\n"
-        f"  DMM: {'✓' if settings.scraper_dmm else '✗'}\n"
-        f"  R18Dev: {'✓' if settings.scraper_r18dev else '✗'}\n"
-        f"  Javlibrary: {'✓' if settings.scraper_javlibrary else '✗'}\n"
-        f"\n"
-        f"[cyan]Proxy:[/]\n"
-        f"  Enabled: {'✓' if settings.proxy.enabled else '✗'}\n"
-        f"  URL: {settings.proxy.url or 'Not set'}\n"
-        f"\n"
-        f"[cyan]Request Settings:[/]\n"
-        f"  Timeout: {settings.timeout}s\n"
-        f"  Sleep: {settings.sleep_between_requests}s",
-        title="⚙️  Config"
-    ))
+    console.print(
+        Panel.fit(
+            f"[bold]Configuration[/]\n"
+            f"Path: {config_path}\n"
+            f"\n"
+            f"[cyan]Scrapers:[/]\n"
+            f"  DMM: {'✓' if settings.scraper_dmm else '✗'}\n"
+            f"  R18Dev: {'✓' if settings.scraper_r18dev else '✗'}\n"
+            f"  Javlibrary: {'✓' if settings.scraper_javlibrary else '✗'}\n"
+            f"\n"
+            f"[cyan]Proxy:[/]\n"
+            f"  Enabled: {'✓' if settings.proxy.enabled else '✗'}\n"
+            f"  URL: {settings.proxy.url or 'Not set'}\n"
+            f"\n"
+            f"[cyan]Request Settings:[/]\n"
+            f"  Timeout: {settings.timeout}s\n"
+            f"  Sleep: {settings.sleep_between_requests}s",
+            title="⚙️  Config",
+        )
+    )
 
 
 @config.command("set-proxy")
@@ -56,20 +58,28 @@ def config_set_proxy(proxy_url: Optional[str], disable: bool):
         javinizer config set-proxy --disable
     """
     if disable:
-        settings = update_proxy(None)
+        update_proxy(None)
         console.print("[green]✓ Proxy disabled[/]")
     elif proxy_url:
-        settings = update_proxy(proxy_url)
+        update_proxy(proxy_url)
         console.print(f"[green]✓ Proxy set to: {proxy_url}[/]")
     else:
         console.print("[yellow]Please provide a proxy URL or use --disable[/]")
 
 
 @config.command("set-javlibrary-cookies")
-@click.option("--cf-clearance", required=True, help="cf_clearance cookie value (required)")
-@click.option("--cf-bm", default=None, help="__cf_bm cookie value (optional, not always present)")
-@click.option("--user-agent", required=True, help="User agent used when getting cookies")
-def config_set_javlibrary_cookies(cf_clearance: str, cf_bm: Optional[str], user_agent: str):
+@click.option(
+    "--cf-clearance", required=True, help="cf_clearance cookie value (required)"
+)
+@click.option(
+    "--cf-bm", default=None, help="__cf_bm cookie value (optional, not always present)"
+)
+@click.option(
+    "--user-agent", required=True, help="User agent used when getting cookies"
+)
+def config_set_javlibrary_cookies(
+    cf_clearance: str, cf_bm: Optional[str], user_agent: str
+):
     """Set Javlibrary Cloudflare cookies for bypass
 
     You can get these cookies by:
@@ -101,8 +111,14 @@ def config_set_javlibrary_cookies(cf_clearance: str, cf_bm: Optional[str], user_
 
 
 @config.command("get-javlibrary-cookies")
-@click.option("--proxy", default=None, help="Proxy URL (e.g., socks5://127.0.0.1:10808)")
-@click.option("--timeout", default=120, help="Timeout in seconds to wait for challenge (default: 120)")
+@click.option(
+    "--proxy", default=None, help="Proxy URL (e.g., socks5://127.0.0.1:10808)"
+)
+@click.option(
+    "--timeout",
+    default=120,
+    help="Timeout in seconds to wait for challenge (default: 120)",
+)
 def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
     """Automatically capture Javlibrary Cloudflare cookies using browser
 
@@ -122,7 +138,9 @@ def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
         return
 
     console.print("[cyan]Opening Chrome to capture Javlibrary cookies...[/]")
-    console.print("[yellow]   Please pass the Cloudflare challenge in the browser window.[/]")
+    console.print(
+        "[yellow]   Please pass the Cloudflare challenge in the browser window.[/]"
+    )
     console.print(f"[dim]   Timeout: {timeout} seconds[/]\n")
 
     driver = None
@@ -130,7 +148,7 @@ def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
         # Chrome options
         options = uc.ChromeOptions()
         if proxy:
-            options.add_argument(f'--proxy-server={proxy}')
+            options.add_argument(f"--proxy-server={proxy}")
 
         # Launch Chrome
         driver = uc.Chrome(options=options)
@@ -159,7 +177,10 @@ def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
 
             # Check if page is loaded correctly (title check)
             try:
-                if "JAVLibrary" in driver.title and "challenge" not in driver.page_source.lower():
+                if (
+                    "JAVLibrary" in driver.title
+                    and "challenge" not in driver.page_source.lower()
+                ):
                     # Double check cookies
                     cookies = driver.get_cookies()
                     for cookie in cookies:
@@ -168,7 +189,7 @@ def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
                             break
                     if cf_clearance:
                         break
-            except:
+            except Exception:
                 pass
 
             time.sleep(1)
@@ -184,7 +205,9 @@ def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
             console.print(f"  cf_clearance: {cf_clearance[:30]}...")
             console.print(f"  User-Agent: {user_agent[:60]}...")
         else:
-            console.print(f"\n[red]Timeout: Could not capture cookies within {timeout} seconds.[/]")
+            console.print(
+                f"\n[red]Timeout: Could not capture cookies within {timeout} seconds.[/]"
+            )
             console.print("  Please try again.")
 
     except Exception as e:
@@ -193,7 +216,7 @@ def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
         if driver:
             try:
                 driver.quit()
-            except:
+            except Exception:
                 pass
 
 
@@ -201,7 +224,9 @@ def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
 @click.option("--folder", help="Folder format template")
 @click.option("--file", "file_fmt", help="File format template")
 @click.option("--nfo", "nfo_fmt", help="NFO filename format template (default: <ID>)")
-def config_set_sort_format(folder: Optional[str], file_fmt: Optional[str], nfo_fmt: Optional[str]):
+def config_set_sort_format(
+    folder: Optional[str], file_fmt: Optional[str], nfo_fmt: Optional[str]
+):
     """Set sorting format templates.
 
     Placeholders: <ID>, <TITLE>, <STUDIO>, <YEAR>, <ACTORS>, <LABEL>

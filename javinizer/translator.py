@@ -16,7 +16,7 @@ def contains_japanese(text: str) -> bool:
     # Katakana: \u30a0-\u30ff
     # Half-width Katakana: \uff66-\uff9f
     # Kanji: \u4e00-\u9faf
-    pattern = r'[\u3040-\u309f\u30a0-\u30ff\uff66-\uff9f\u4e00-\u9faf]'
+    pattern = r"[\u3040-\u309f\u30a0-\u30ff\uff66-\uff9f\u4e00-\u9faf]"
     return bool(re.search(pattern, text))
 
 
@@ -117,7 +117,12 @@ class Translator:
             raise RuntimeError(f"DeepL error: {e}")
 
 
-def translate_metadata(metadata, translator: Translator, translate_title: bool = True, translate_description: bool = True):
+def translate_metadata(
+    metadata,
+    translator: Translator,
+    translate_title: bool = True,
+    translate_description: bool = True,
+):
     """
     Translate metadata fields in-place.
 
@@ -135,10 +140,10 @@ def translate_metadata(metadata, translator: Translator, translate_title: bool =
             if not metadata.original_title:
                 metadata.original_title = original
             metadata.title = translated
-            console.print(f"[dim]Translated title[/]")
+            console.print("[dim]Translated title[/]")
 
     if translate_description and metadata.description:
         translated = translator.translate(metadata.description)
         if translated != metadata.description:
             metadata.description = translated
-            console.print(f"[dim]Translated description[/]")
+            console.print("[dim]Translated description[/]")

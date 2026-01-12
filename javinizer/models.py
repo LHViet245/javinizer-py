@@ -87,7 +87,9 @@ class ProxyConfig(BaseModel):
     """Proxy configuration for HTTP/SOCKS5"""
 
     enabled: bool = False
-    url: Optional[str] = None  # e.g., "socks5://127.0.0.1:1080" or "http://user:pass@proxy:8080"
+    url: Optional[str] = (
+        None  # e.g., "socks5://127.0.0.1:1080" or "http://user:pass@proxy:8080"
+    )
 
     @property
     def httpx_proxy(self) -> Optional[str]:
@@ -103,10 +105,14 @@ class ScraperPriority(BaseModel):
     # Which scrapers to use for each field (first match wins)
     actress: list[str] = Field(default_factory=lambda: ["r18dev", "dmm", "javlibrary"])
     title: list[str] = Field(default_factory=lambda: ["r18dev", "javlibrary", "dmm"])
-    cover_url: list[str] = Field(default_factory=lambda: ["r18dev", "dmm", "javlibrary"])
+    cover_url: list[str] = Field(
+        default_factory=lambda: ["r18dev", "dmm", "javlibrary"]
+    )
     description: list[str] = Field(default_factory=lambda: ["dmm", "r18dev"])
     genre: list[str] = Field(default_factory=lambda: ["r18dev", "javlibrary", "dmm"])
-    release_date: list[str] = Field(default_factory=lambda: ["r18dev", "javlibrary", "dmm"])
+    release_date: list[str] = Field(
+        default_factory=lambda: ["r18dev", "javlibrary", "dmm"]
+    )
     runtime: list[str] = Field(default_factory=lambda: ["r18dev", "javlibrary", "dmm"])
     maker: list[str] = Field(default_factory=lambda: ["r18dev", "javlibrary", "dmm"])
 
@@ -149,7 +155,9 @@ class ThumbsSettings(BaseModel):
     enabled: bool = True
     storage_path: str = "thumbs"  # Relative to config or absolute
     csv_file: str = "actresses.csv"  # Relative to config or absolute
-    path_mapping: dict[str, str] = Field(default_factory=dict)  # e.g., {"E:/Javinizer/thumbs": "/media/thumbs"}
+    path_mapping: dict[str, str] = Field(
+        default_factory=dict
+    )  # e.g., {"E:/Javinizer/thumbs": "/media/thumbs"}
     auto_download: bool = True  # Add new actresses found during scrape
     download_on_sort: bool = True  # Download thumb ONLY when sorting
     verify_ssl: bool = True
@@ -184,7 +192,9 @@ class RateLimitSettings(BaseModel):
 
     enabled: bool = True
     default_delay: float = 1.0  # seconds between requests to same domain
-    domain_delays: dict[str, float] = Field(default_factory=dict)  # per-domain overrides
+    domain_delays: dict[str, float] = Field(
+        default_factory=dict
+    )  # per-domain overrides
 
 
 class Settings(BaseModel):
@@ -204,7 +214,9 @@ class Settings(BaseModel):
     # Request settings
     timeout: float = 30.0
     sleep_between_requests: float = 1.0
-    log_file: Optional[str] = None  # Path to log file (default: None for no file logging)
+    log_file: Optional[str] = (
+        None  # Path to log file (default: None for no file logging)
+    )
 
     # Javlibrary specific (Cloudflare cookies)
     javlibrary_cookies: dict[str, str] = Field(default_factory=dict)
@@ -237,4 +249,3 @@ class Settings(BaseModel):
     # Concurrency settings
     max_concurrent_downloads: int = 5
     max_concurrent_scrapers: int = 3
-

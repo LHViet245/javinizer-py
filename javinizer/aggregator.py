@@ -2,8 +2,7 @@
 
 from typing import Any, Optional
 
-from javinizer.models import MovieMetadata, Actress, Rating, ScraperPriority
-
+from javinizer.models import MovieMetadata, Actress, ScraperPriority
 
 
 def aggregate_metadata(
@@ -63,7 +62,6 @@ def aggregate_metadata(
             if value:
                 return value
         return None
-
 
     # Merge actresses from all sources
     def merge_actresses() -> list[Actress]:

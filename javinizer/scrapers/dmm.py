@@ -4,7 +4,6 @@ import re
 from datetime import datetime
 from typing import Optional
 from urllib.parse import quote
-from functools import lru_cache
 
 from bs4 import BeautifulSoup, Tag
 
@@ -49,7 +48,6 @@ class DMMScraper(BaseScraper):
             user_agent=user_agent,
             verify_ssl=verify_ssl,
         )
-
 
     @property
     def client(self):
@@ -187,7 +185,7 @@ class DMMScraper(BaseScraper):
 
     def _parse_title(self, soup: BeautifulSoup) -> Optional[str]:
         """Parse movie title"""
-        title_elem = soup.select_one('h1#title, h1.item')
+        title_elem = soup.select_one("h1#title, h1.item")
         if title_elem:
             return title_elem.get_text(strip=True)
         return None
@@ -206,12 +204,12 @@ class DMMScraper(BaseScraper):
             if match:
                 desc = match.group(1)
                 # Clean HTML tags
-                desc = re.sub(r'<[^>]+>', '', desc)
+                desc = re.sub(r"<[^>]+>", "", desc)
                 # Clean up whitespace
-                desc = re.sub(r'\s+', ' ', desc)
+                desc = re.sub(r"\s+", " ", desc)
                 desc = desc.strip()
                 # Only return if it looks like actual content (not JS/CSS)
-                if desc and not desc.startswith('{') and 'function' not in desc.lower():
+                if desc and not desc.startswith("{") and "function" not in desc.lower():
                     return desc[:2000]  # Limit to reasonable length
         return None
 
@@ -240,7 +238,7 @@ class DMMScraper(BaseScraper):
         """Parse maker/studio name"""
         match = re.search(
             r'href="[^"]*(?:\?maker=|/article=maker/id=)\d+[^"]*"[^>]*>([\s\S]*?)</a>',
-            html
+            html,
         )
         return match.group(1).strip() if match else None
 
@@ -248,16 +246,13 @@ class DMMScraper(BaseScraper):
         """Parse label name"""
         match = re.search(
             r'href="[^"]*(?:\?label=|/article=label/id=)\d+[^"]*"[^>]*>([\s\S]*?)</a>',
-            html
+            html,
         )
         return match.group(1).strip() if match else None
 
     def _parse_series(self, html: str) -> Optional[str]:
         """Parse series name"""
-        match = re.search(
-            r'href="[^"]*/article=series/id=\d+/?"[^>]*>(.*?)</a>',
-            html
-        )
+        match = re.search(r'href="[^"]*/article=series/id=\d+/?"[^>]*>(.*?)</a>', html)
         return match.group(1).strip() if match else None
 
     def _parse_actresses(self, soup: BeautifulSoup, html: str) -> list[Actress]:
@@ -291,7 +286,9 @@ class DMMScraper(BaseScraper):
                     seen_names.add(name)
 
                     # Check if name is Japanese
-                    is_japanese = bool(re.search(r'[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]', name))
+                    is_japanese = bool(
+                        re.search(r"[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]", name)
+                    )
 
                     actress = Actress(
                         japanese_name=name if is_japanese else None,
@@ -306,23 +303,24 @@ class DMMScraper(BaseScraper):
         """Check if a string is a valid actress name."""
         return is_valid_actress_name(name)
 
-
     def _parse_genres(self, html: str) -> list[str]:
         """Parse genre list"""
         genres = []
 
         # Find genre section
-        genre_section = re.search(r'>(Genre:|ジャンル：)</td>(.*?)</tr>', html, re.DOTALL)
+        genre_section = re.search(
+            r">(Genre:|ジャンル：)</td>(.*?)</tr>", html, re.DOTALL
+        )
         if genre_section:
             # Extract genre links
-            matches = re.findall(r'>([^<]+)</a>', genre_section.group(2))
+            matches = re.findall(r">([^<]+)</a>", genre_section.group(2))
             genres = [g.strip() for g in matches if g.strip()]
 
         return genres
 
     def _parse_rating(self, html: str) -> Optional[Rating]:
         """Parse rating and vote count"""
-        match = re.search(r'<strong>([\d.]+)\s*(?:points|点)</strong>', html)
+        match = re.search(r"<strong>([\d.]+)\s*(?:points|点)</strong>", html)
         if not match:
             return None
 
@@ -332,7 +330,7 @@ class DMMScraper(BaseScraper):
             rating_10 = rating_value * 2
 
             # Try to find vote count
-            votes_match = re.search(r'<strong>(\d+)</strong>\s*(?:reviews|件)', html)
+            votes_match = re.search(r"<strong>(\d+)</strong>\s*(?:reviews|件)", html)
             votes = int(votes_match.group(1)) if votes_match else 0
 
             return Rating(rating=rating_10, votes=votes)
@@ -343,7 +341,7 @@ class DMMScraper(BaseScraper):
         """Parse cover image URL, prioritizing high-quality awsimgsrc.dmm.co.jp domain"""
         match = re.search(
             r'(https://pics\.dmm\.co\.jp/(?:mono/movie/adult|digital/(?:video|amateur))/[^"]+\.jpg)',
-            html
+            html,
         )
         if match:
             cover = match.group(1)
@@ -390,5 +388,7 @@ if __name__ == "__main__":
             print(f"Title: {metadata.title}")
             print(f"ID: {metadata.id}")
             print(f"Maker: {metadata.maker}")
-            print(f"Actresses: {[a.japanese_name or a.full_name for a in metadata.actresses]}")
+            print(
+                f"Actresses: {[a.japanese_name or a.full_name for a in metadata.actresses]}"
+            )
             print(f"Genres: {metadata.genres}")

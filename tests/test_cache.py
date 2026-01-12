@@ -85,7 +85,7 @@ class TestCacheManager:
         # Store
         success = temp_cache.set("IPX-486", "r18dev", sample_metadata)
         assert success is True
-        
+
         # Retrieve
         cached = temp_cache.get("IPX-486", "r18dev")
         assert cached is not None
@@ -96,7 +96,7 @@ class TestCacheManager:
     def test_case_insensitive_lookup(self, temp_cache, sample_metadata):
         """Test that movie ID lookup is case-insensitive"""
         temp_cache.set("ipx-486", "dmm", sample_metadata)
-        
+
         # Should find with uppercase
         cached = temp_cache.get("IPX-486", "dmm")
         assert cached is not None
@@ -105,15 +105,15 @@ class TestCacheManager:
         """Test that different sources are stored separately"""
         # Store with two sources
         temp_cache.set("IPX-486", "dmm", sample_metadata)
-        
+
         modified = sample_metadata.model_copy()
         modified.title = "Modified Title"
         temp_cache.set("IPX-486", "r18dev", modified)
-        
+
         # Retrieve both
         dmm_cached = temp_cache.get("IPX-486", "dmm")
         r18_cached = temp_cache.get("IPX-486", "r18dev")
-        
+
         assert dmm_cached.title == "Test Movie Title"
         assert r18_cached.title == "Modified Title"
 
@@ -121,11 +121,11 @@ class TestCacheManager:
         """Test invalidating a specific source"""
         temp_cache.set("IPX-486", "dmm", sample_metadata)
         temp_cache.set("IPX-486", "r18dev", sample_metadata)
-        
+
         # Invalidate only dmm
         count = temp_cache.invalidate("IPX-486", "dmm")
         assert count == 1
-        
+
         # r18dev should still exist
         assert temp_cache.get("IPX-486", "dmm") is None
         assert temp_cache.get("IPX-486", "r18dev") is not None
@@ -134,10 +134,10 @@ class TestCacheManager:
         """Test invalidating all sources for a movie"""
         temp_cache.set("IPX-486", "dmm", sample_metadata)
         temp_cache.set("IPX-486", "r18dev", sample_metadata)
-        
+
         count = temp_cache.invalidate("IPX-486")
         assert count == 2
-        
+
         assert temp_cache.get("IPX-486", "dmm") is None
         assert temp_cache.get("IPX-486", "r18dev") is None
 
@@ -147,14 +147,14 @@ class TestCacheManager:
         stats = temp_cache.get_stats()
         assert stats["enabled"] is True
         assert stats["total_entries"] == 0
-        
+
         # Add entries
         temp_cache.set("IPX-486", "dmm", sample_metadata)
         temp_cache.set("SSNI-123", "dmm", sample_metadata)
-        
+
         # Get to increment hit count
         temp_cache.get("IPX-486", "dmm")
-        
+
         stats = temp_cache.get_stats()
         assert stats["total_entries"] == 2
         assert stats["total_hits"] == 1
@@ -163,10 +163,10 @@ class TestCacheManager:
         """Test clearing all cache entries"""
         temp_cache.set("IPX-486", "dmm", sample_metadata)
         temp_cache.set("SSNI-123", "dmm", sample_metadata)
-        
+
         count = temp_cache.clear()
         assert count == 2
-        
+
         stats = temp_cache.get_stats()
         assert stats["total_entries"] == 0
 
@@ -174,10 +174,10 @@ class TestCacheManager:
         """Test that disabled cache always returns None"""
         config = CacheConfig(enabled=False)
         cache = CacheManager(config)
-        
+
         cache.set("IPX-486", "dmm", sample_metadata)
         result = cache.get("IPX-486", "dmm")
-        
+
         assert result is None
 
     def test_context_manager(self, sample_metadata):
@@ -187,7 +187,7 @@ class TestCacheManager:
                 db_path=Path(tmpdir) / "test.db",
                 enabled=True,
             )
-            
+
             with CacheManager(config) as cache:
                 cache.set("IPX-486", "dmm", sample_metadata)
                 assert cache.get("IPX-486", "dmm") is not None

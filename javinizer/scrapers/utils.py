@@ -3,7 +3,6 @@
 
 import re
 from functools import lru_cache
-from typing import Optional
 
 
 @lru_cache(maxsize=256)
@@ -119,12 +118,25 @@ def is_valid_actress_name(name: str) -> bool:
 
     # Skip if contains promotional markers
     invalid_markers = [
-        "★", "☆", "●", "◆", "■",  # Special markers
-        "ご購入", "商品", "こちら",  # Purchase/product text
-        "アダルトブック", "写真集",  # Book/photobook promo
-        "http", "www", ".com", ".jp",  # URLs
-        "限定", "特典", "キャンペーン",  # Limited/bonus/campaign
-        "配信", "ダウンロード",  # Distribution/download
+        "★",
+        "☆",
+        "●",
+        "◆",
+        "■",  # Special markers
+        "ご購入",
+        "商品",
+        "こちら",  # Purchase/product text
+        "アダルトブック",
+        "写真集",  # Book/photobook promo
+        "http",
+        "www",
+        ".com",
+        ".jp",  # URLs
+        "限定",
+        "特典",
+        "キャンペーン",  # Limited/bonus/campaign
+        "配信",
+        "ダウンロード",  # Distribution/download
     ]
 
     for marker in invalid_markers:

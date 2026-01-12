@@ -1,13 +1,11 @@
 """R18Dev JSON API scraper for metadata"""
 
-import re
 from datetime import datetime
 from typing import Optional
-from functools import lru_cache
 
 import httpx
 
-from javinizer.models import Actress, MovieMetadata, ProxyConfig, Rating
+from javinizer.models import Actress, MovieMetadata, ProxyConfig
 from javinizer.scrapers.base import BaseScraper
 from javinizer.scrapers.utils import normalize_id_variants
 from javinizer.logger import get_logger
@@ -93,7 +91,11 @@ class R18DevScraper(BaseScraper):
                     if isinstance(data, dict) and data.get("dvd_id"):
                         return url
                     # Handle list response (some endpoints return list of results)
-                    elif isinstance(data, list) and len(data) > 0 and data[0].get("dvd_id"):
+                    elif (
+                        isinstance(data, list)
+                        and len(data) > 0
+                        and data[0].get("dvd_id")
+                    ):
                         return url
             except Exception:
                 continue
@@ -147,10 +149,10 @@ class R18DevScraper(BaseScraper):
     def _get_title(self, data: dict) -> str:
         """Get best available title"""
         return (
-            data.get("title_en") or
-            data.get("title") or
-            data.get("title_ja") or
-            "Unknown"
+            data.get("title_en")
+            or data.get("title")
+            or data.get("title_ja")
+            or "Unknown"
         )
 
     def _parse_date(self, date_str: Optional[str]) -> Optional[datetime]:
@@ -187,7 +189,9 @@ class R18DevScraper(BaseScraper):
             actress = Actress(
                 first_name=name_parts[0] if name_parts else None,
                 last_name=name_parts[1] if len(name_parts) > 1 else None,
-                japanese_name=actress_data.get("name_kanji", "").replace("（.*）", "").replace("&amp;", "&"),
+                japanese_name=actress_data.get("name_kanji", "")
+                .replace("（.*）", "")
+                .replace("&amp;", "&"),
                 thumb_url=thumb_url,
             )
             actresses.append(actress)
@@ -238,7 +242,9 @@ class R18DevScraper(BaseScraper):
 
         # Convert to full size URLs
         return [
-            url.replace("-", "jp-") if isinstance(url, str) and (not url.startswith("http") or "jp-" not in url) else url
+            url.replace("-", "jp-")
+            if isinstance(url, str) and (not url.startswith("http") or "jp-" not in url)
+            else url
             for url in images
             if isinstance(url, str)
         ]
@@ -252,6 +258,8 @@ if __name__ == "__main__":
             print(f"Title: {metadata.title}")
             print(f"ID: {metadata.id}")
             print(f"Maker: {metadata.maker}")
-            print(f"Actresses: {[a.japanese_name or a.full_name for a in metadata.actresses]}")
+            print(
+                f"Actresses: {[a.japanese_name or a.full_name for a in metadata.actresses]}"
+            )
         else:
             print("No results found")

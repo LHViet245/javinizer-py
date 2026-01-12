@@ -14,6 +14,7 @@ logger = get_logger(__name__)
 # Try to import Pillow for image cropping
 try:
     from PIL import Image
+
     PILLOW_AVAILABLE = True
 except ImportError:
     PILLOW_AVAILABLE = False
@@ -31,7 +32,7 @@ class ImageDownloader:
         self,
         proxy: Optional[str] = None,
         timeout: float = 30.0,
-        user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     ):
         """
         Initialize image downloader.
@@ -81,19 +82,19 @@ class ImageDownloader:
                 return True
 
         except Exception as e:
-            logger.error(f"Failed to download image", extra={
-                "url": url,
-                "dest": str(dest_path),
-                "error": str(e),
-                "stage": "download"
-            })
+            logger.error(
+                "Failed to download image",
+                extra={
+                    "url": url,
+                    "dest": str(dest_path),
+                    "error": str(e),
+                    "stage": "download",
+                },
+            )
             return False
 
     async def download_cover_and_poster(
-        self,
-        cover_url: str,
-        backdrop_path: Path,
-        poster_path: Path
+        self, cover_url: str, backdrop_path: Path, poster_path: Path
     ) -> tuple[bool, bool]:
         """
         Download cover image as backdrop and create cropped poster.
@@ -132,7 +133,9 @@ class ImageDownloader:
             True if successful, False otherwise
         """
         if not PILLOW_AVAILABLE:
-            logger.warning("Pillow not installed. Cannot create poster.", extra={"stage": "poster"})
+            logger.warning(
+                "Pillow not installed. Cannot create poster.", extra={"stage": "poster"}
+            )
             return False
 
         if not source_path.exists():
@@ -155,26 +158,26 @@ class ImageDownloader:
                 poster_path.parent.mkdir(parents=True, exist_ok=True)
 
                 # Save as JPEG
-                if cropped.mode in ('RGBA', 'P'):
-                    cropped = cropped.convert('RGB')
-                cropped.save(poster_path, 'JPEG', quality=95)
+                if cropped.mode in ("RGBA", "P"):
+                    cropped = cropped.convert("RGB")
+                cropped.save(poster_path, "JPEG", quality=95)
 
                 return True
 
         except Exception as e:
-            logger.error(f"Failed to create poster", extra={
-                "source": str(source_path),
-                "dest": str(poster_path),
-                "error": str(e),
-                "stage": "poster"
-            })
+            logger.error(
+                "Failed to create poster",
+                extra={
+                    "source": str(source_path),
+                    "dest": str(poster_path),
+                    "error": str(e),
+                    "stage": "poster",
+                },
+            )
             return False
 
     async def download_screenshots(
-        self,
-        urls: list[str],
-        dest_folder: Path,
-        prefix: str = "screenshot"
+        self, urls: list[str], dest_folder: Path, prefix: str = "screenshot"
     ) -> int:
         """
         Download multiple screenshot images.
@@ -191,7 +194,7 @@ class ImageDownloader:
             return 0
 
         dest_folder.mkdir(parents=True, exist_ok=True)
-        
+
         # Create download tasks
         tasks = []
         for i, url in enumerate(urls, 1):
@@ -202,9 +205,9 @@ class ImageDownloader:
         # Run concurrently
         if not tasks:
             return 0
-            
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # Count successes (True results)
         return sum(1 for r in results if r is True)
 
@@ -213,21 +216,18 @@ class ImageDownloader:
         parsed = urlparse(url)
         path = parsed.path.lower()
 
-        if path.endswith('.jpg') or path.endswith('.jpeg'):
-            return '.jpg'
-        elif path.endswith('.png'):
-            return '.png'
-        elif path.endswith('.webp'):
-            return '.webp'
+        if path.endswith(".jpg") or path.endswith(".jpeg"):
+            return ".jpg"
+        elif path.endswith(".png"):
+            return ".png"
+        elif path.endswith(".webp"):
+            return ".webp"
         else:
-            return '.jpg'  # Default
+            return ".jpg"  # Default
 
 
 def download_image_sync(
-    url: str,
-    dest_path: Path,
-    proxy: Optional[str] = None,
-    timeout: float = 30.0
+    url: str, dest_path: Path, proxy: Optional[str] = None, timeout: float = 30.0
 ) -> bool:
     """
     Synchronous wrapper for downloading a single image.

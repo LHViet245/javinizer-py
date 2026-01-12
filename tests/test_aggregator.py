@@ -105,46 +105,57 @@ class TestAggregateMetadata:
 
     def test_priority_title_from_r18dev(self, dmm_metadata, r18dev_metadata):
         """Test that title is taken from r18dev by default priority"""
-        result = aggregate_metadata({
-            "dmm": dmm_metadata,
-            "r18dev": r18dev_metadata,
-        })
+        result = aggregate_metadata(
+            {
+                "dmm": dmm_metadata,
+                "r18dev": r18dev_metadata,
+            }
+        )
         # Default priority: r18dev > javlibrary > dmm for title
         assert result.title == "R18Dev English Title"
 
     def test_priority_cover_from_r18dev(self, dmm_metadata, r18dev_metadata):
         """Test that cover URL is taken from r18dev by default priority"""
-        result = aggregate_metadata({
-            "dmm": dmm_metadata,
-            "r18dev": r18dev_metadata,
-        })
+        result = aggregate_metadata(
+            {
+                "dmm": dmm_metadata,
+                "r18dev": r18dev_metadata,
+            }
+        )
         assert result.cover_url == "https://r18.dev/cover.jpg"
 
     def test_priority_description_from_dmm(self, dmm_metadata, r18dev_metadata):
         """Test that description is taken from dmm by default priority"""
         priority = ScraperPriority(description=["dmm", "r18dev"])
-        result = aggregate_metadata({
-            "dmm": dmm_metadata,
-            "r18dev": r18dev_metadata,
-        }, priority=priority)
+        result = aggregate_metadata(
+            {
+                "dmm": dmm_metadata,
+                "r18dev": r18dev_metadata,
+            },
+            priority=priority,
+        )
         assert result.description == "DMM description in Japanese"
 
     def test_merge_actresses_unique(self, dmm_metadata, r18dev_metadata):
         """Test that actresses are merged uniquely"""
-        result = aggregate_metadata({
-            "dmm": dmm_metadata,
-            "r18dev": r18dev_metadata,
-        })
+        result = aggregate_metadata(
+            {
+                "dmm": dmm_metadata,
+                "r18dev": r18dev_metadata,
+            }
+        )
         # Should have 1 actress (same person, deduplicated by japanese_name)
         assert len(result.actresses) == 1
         assert result.actresses[0].japanese_name == "桜もも"
 
     def test_merge_genres_union(self, dmm_metadata, r18dev_metadata):
         """Test that genres are merged as union"""
-        result = aggregate_metadata({
-            "dmm": dmm_metadata,
-            "r18dev": r18dev_metadata,
-        })
+        result = aggregate_metadata(
+            {
+                "dmm": dmm_metadata,
+                "r18dev": r18dev_metadata,
+            }
+        )
         # Should include genres from both sources
         assert "Beautiful Girl" in result.genres
         assert "Featured Actress" in result.genres
@@ -155,10 +166,13 @@ class TestAggregateMetadata:
             title=["dmm"],
             cover_url=["dmm"],
         )
-        result = aggregate_metadata({
-            "dmm": dmm_metadata,
-            "r18dev": r18dev_metadata,
-        }, priority=priority)
+        result = aggregate_metadata(
+            {
+                "dmm": dmm_metadata,
+                "r18dev": r18dev_metadata,
+            },
+            priority=priority,
+        )
         assert result.title == "DMM Title (Japanese)"
         assert result.cover_url == "https://pics.dmm.co.jp/dmm/cover.jpg"
 
@@ -173,20 +187,25 @@ class TestAggregateMetadata:
         """Test fallback to next priority when primary has empty value"""
         dmm_metadata.description = None  # Empty description
         priority = ScraperPriority(description=["dmm", "r18dev"])
-        result = aggregate_metadata({
-            "dmm": dmm_metadata,
-            "r18dev": r18dev_metadata,
-        }, priority=priority)
+        result = aggregate_metadata(
+            {
+                "dmm": dmm_metadata,
+                "r18dev": r18dev_metadata,
+            },
+            priority=priority,
+        )
         # Should fall back to r18dev
         assert result.description == "R18Dev English description"
 
     def test_three_sources(self, dmm_metadata, r18dev_metadata, javlibrary_metadata):
         """Test aggregation with three sources"""
-        result = aggregate_metadata({
-            "dmm": dmm_metadata,
-            "r18dev": r18dev_metadata,
-            "javlibrary": javlibrary_metadata,
-        })
+        result = aggregate_metadata(
+            {
+                "dmm": dmm_metadata,
+                "r18dev": r18dev_metadata,
+                "javlibrary": javlibrary_metadata,
+            }
+        )
         assert result is not None
         assert result.source == "aggregated"
         # Rating should come from javlibrary (higher votes)

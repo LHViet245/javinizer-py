@@ -2,8 +2,6 @@
 """Tests for HTTP retry logic module"""
 
 import pytest
-import time
-from unittest.mock import MagicMock, patch
 
 from javinizer.http.retry import (
     RetryConfig,
@@ -40,7 +38,7 @@ class TestRetryConfig:
     def test_calculate_delay_exponential(self):
         """Test exponential backoff delay calculation"""
         config = RetryConfig(initial_delay=1.0, exponential_base=2.0)
-        
+
         assert config.calculate_delay(0) == 1.0  # 1 * 2^0
         assert config.calculate_delay(1) == 2.0  # 1 * 2^1
         assert config.calculate_delay(2) == 4.0  # 1 * 2^2
@@ -53,7 +51,7 @@ class TestRetryConfig:
             exponential_base=2.0,
             max_delay=5.0,
         )
-        
+
         assert config.calculate_delay(0) == 1.0
         assert config.calculate_delay(1) == 2.0
         assert config.calculate_delay(2) == 4.0
@@ -108,7 +106,7 @@ class TestWithRetryDecorator:
 
         with pytest.raises(RetryableError):
             always_fails()
-        
+
         assert call_count == 3  # Initial + 2 retries
 
     def test_non_retryable_exception_not_caught(self):
@@ -124,7 +122,7 @@ class TestWithRetryDecorator:
 
         with pytest.raises(ValueError):
             raises_value_error()
-        
+
         assert call_count == 1  # Only called once
 
     def test_on_retry_callback(self):

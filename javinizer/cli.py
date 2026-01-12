@@ -29,7 +29,7 @@ def main():
         javinizer find IPX-486 --proxy socks5://127.0.0.1:1080
 
         javinizer config --proxy socks5://127.0.0.1:1080
-        
+
         javinizer status
     """
     pass

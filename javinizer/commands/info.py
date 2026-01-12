@@ -11,14 +11,16 @@ from javinizer.scrapers import is_playwright_available
 @click.command()
 def info():
     """Show Javinizer information"""
-    console.print(Panel.fit(
-        f"[bold]Javinizer Python Edition[/]\n"
-        f"Version: {__version__}\n"
-        f"\n"
-        f"[dim]A Python port of the PowerShell Javinizer module[/]\n"
-        f"[dim]for scraping and organizing JAV metadata.[/]",
-        title="ℹ️  Info"
-    ))
+    console.print(
+        Panel.fit(
+            f"[bold]Javinizer Python Edition[/]\n"
+            f"Version: {__version__}\n"
+            f"\n"
+            f"[dim]A Python port of the PowerShell Javinizer module[/]\n"
+            f"[dim]for scraping and organizing JAV metadata.[/]",
+            title="ℹ️  Info",
+        )
+    )
 
     console.print()
     console.print("[bold]Available Scrapers:[/]")
@@ -27,9 +29,13 @@ def info():
 
     # Check if dmm_new is available
     if is_playwright_available():
-        console.print("  • [cyan]dmm_new[/] - DMM/Fanza new site (requires Playwright) [green]✓[/]")
+        console.print(
+            "  • [cyan]dmm_new[/] - DMM/Fanza new site (requires Playwright) [green]✓[/]"
+        )
     else:
-        console.print("  • [dim]dmm_new[/] - DMM/Fanza new site [yellow](install: pip install javinizer[browser])[/]")
+        console.print(
+            "  • [dim]dmm_new[/] - DMM/Fanza new site [yellow](install: pip install javinizer[browser])[/]"
+        )
 
     console.print("  • [cyan]javlibrary[/] - Javlibrary (requires Cloudflare cookies)")
     console.print()

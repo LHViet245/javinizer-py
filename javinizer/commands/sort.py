@@ -6,7 +6,7 @@ from pathlib import Path
 
 import click
 
-from javinizer.cli_common import console, expand_sources, get_scraper
+from javinizer.cli_common import console, expand_sources
 from javinizer.models import ProxyConfig
 from javinizer.config import load_settings
 from javinizer.matcher import extract_movie_id, find_video_files
@@ -18,12 +18,26 @@ from javinizer.cli_helpers import process_thumbnails, translate_metadata_if_enab
 
 @click.command("sort")
 @click.argument("video_file", type=click.Path(exists=True))
-@click.option("--dest", "-d", type=click.Path(), help="Destination folder (default: same as video)")
-@click.option("--source", "-s", default="r18dev,dmm_new", help="Scraper sources (comma-separated)")
+@click.option(
+    "--dest",
+    "-d",
+    type=click.Path(),
+    help="Destination folder (default: same as video)",
+)
+@click.option(
+    "--source", "-s", default="r18dev,dmm_new", help="Scraper sources (comma-separated)"
+)
 @click.option("--proxy", "-p", help="Proxy URL (overrides config)")
 @click.option("--dry-run", is_flag=True, help="Preview without making changes")
 @click.option("--copy", is_flag=True, help="Copy files instead of moving")
-def sort(video_file: str, dest: Optional[str], source: str, proxy: Optional[str], dry_run: bool, copy: bool):
+def sort(
+    video_file: str,
+    dest: Optional[str],
+    source: str,
+    proxy: Optional[str],
+    dry_run: bool,
+    copy: bool,
+):
     """Sort a single video file with metadata.
 
     This command will:
@@ -45,7 +59,7 @@ def sort(video_file: str, dest: Optional[str], source: str, proxy: Optional[str]
         dest_path = Path(dest)
     else:
         dest_path = video_path.parent
-        console.print(f"[dim]No --dest provided, sorting in-place[/]")
+        console.print("[dim]No --dest provided, sorting in-place[/]")
 
     # Extract movie ID
     movie_id = extract_movie_id(video_path.name)
@@ -71,13 +85,8 @@ def sort(video_file: str, dest: Optional[str], source: str, proxy: Optional[str]
     results = {}
 
     from javinizer.cli_common import scrape_parallel
-    results = scrape_parallel(
-        movie_id, 
-        sources, 
-        proxy_config, 
-        settings, 
-        console
-    )
+
+    results = scrape_parallel(movie_id, sources, proxy_config, settings, console)
 
     if not results:
         console.print(f"[red]Could not find metadata for {movie_id}[/]")
@@ -86,6 +95,7 @@ def sort(video_file: str, dest: Optional[str], source: str, proxy: Optional[str]
     # Aggregate results if multiple sources found
     if len(results) > 1:
         from javinizer.aggregator import aggregate_metadata
+
         metadata = aggregate_metadata(results, settings.priority)
         console.print(f"[green]📦 Aggregated from {len(results)} sources[/]")
     else:
@@ -152,10 +162,10 @@ def sort(video_file: str, dest: Optional[str], source: str, proxy: Optional[str]
         )
 
         console.print("[dim]Downloading images...[/]", end=" ")
-        
+
         # Helper wrapper for coroutine
         async def run_download():
-             return await downloader.download_cover_and_poster(
+            return await downloader.download_cover_and_poster(
                 metadata.cover_url,
                 paths.backdrop_path,
                 paths.poster_path,
@@ -191,7 +201,9 @@ def sort(video_file: str, dest: Optional[str], source: str, proxy: Optional[str]
 
 @click.command("sort-dir")
 @click.argument("input_dir", type=click.Path(exists=True))
-@click.option("--dest", "-d", required=True, type=click.Path(), help="Destination folder")
+@click.option(
+    "--dest", "-d", required=True, type=click.Path(), help="Destination folder"
+)
 @click.option("--source", "-s", default="r18dev,dmm_new", help="Scraper sources")
 @click.option("--proxy", "-p", help="Proxy URL")
 @click.option("--recursive", "-r", is_flag=True, help="Search subdirectories")
@@ -206,7 +218,7 @@ def sort_dir(
     recursive: bool,
     dry_run: bool,
     copy: bool,
-    min_size: int
+    min_size: int,
 ):
     """Sort all video files in a directory.
 
@@ -267,7 +279,7 @@ def sort_dir(
 
     # Summary
     console.print()
-    console.print(f"[bold]Summary:[/]")
+    console.print("[bold]Summary:[/]")
     console.print(f"  Processed: {success_count}")
     console.print(f"  Skipped:   {skip_count}")
     console.print(f"  Errors:    {error_count}")

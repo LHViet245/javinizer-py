@@ -10,6 +10,7 @@ from .models import MovieMetadata
 from .matcher import find_subtitle_files, get_subtitle_language
 
 from rich.console import Console
+
 console = Console()
 
 
@@ -73,16 +74,16 @@ def sanitize_filename(name: str) -> str:
     """
     # Replace invalid characters
     for char in INVALID_FILENAME_CHARS:
-        if char == '/':
-            name = name.replace(char, '-')
+        if char == "/":
+            name = name.replace(char, "-")
         else:
-            name = name.replace(char, '')
+            name = name.replace(char, "")
 
     # Remove leading/trailing dots and spaces
-    name = name.strip('. ')
+    name = name.strip(". ")
 
     # Collapse multiple spaces
-    name = re.sub(r'\s+', ' ', name)
+    name = re.sub(r"\s+", " ", name)
 
     return name
 
@@ -104,16 +105,16 @@ def truncate_title(title: str, max_length: int) -> str:
     short = title[:max_length]
 
     # Check if title contains Japanese/Chinese characters
-    if re.search(r'[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]', short):
-        return short + '...'
+    if re.search(r"[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]", short):
+        return short + "..."
 
     # For Western text, try to preserve whole words
-    words = short.rsplit(' ', 1)
+    words = short.rsplit(" ", 1)
     if len(words) > 1:
-        result = words[0].rstrip('.,!?;:')
-        return result + '...'
+        result = words[0].rstrip(".,!?;:")
+        return result + "..."
 
-    return short + '...'
+    return short + "..."
 
 
 def format_actresses(
@@ -121,7 +122,7 @@ def format_actresses(
     delimiter: str = ", ",
     japanese: bool = False,
     first_name_order: bool = True,
-    group_if_multiple: bool = True
+    group_if_multiple: bool = True,
 ) -> str:
     """
     Format actress names as string.
@@ -154,11 +155,7 @@ def format_actresses(
     return delimiter.join(sorted(names))
 
 
-def format_template(
-    template: str,
-    metadata: MovieMetadata,
-    config: SortConfig
-) -> str:
+def format_template(template: str, metadata: MovieMetadata, config: SortConfig) -> str:
     """
     Replace placeholders in template string with metadata values.
 
@@ -182,33 +179,35 @@ def format_template(
         delimiter=config.actress_delimiter,
         japanese=config.actress_language_ja,
         first_name_order=config.first_name_order,
-        group_if_multiple=config.group_actress
+        group_if_multiple=config.group_actress,
     )
 
     # Replace placeholders
     result = template
     replacements = {
-        '<ID>': metadata.id,
-        '<TITLE>': title,
-        '<ORIGINALTITLE>': metadata.original_title or title,
-        '<STUDIO>': metadata.maker or 'Unknown',
-        '<YEAR>': year,
-        '<RELEASEDATE>': str(metadata.release_date) if metadata.release_date else 'Unknown',
-        '<RUNTIME>': str(metadata.runtime) if metadata.runtime else 'Unknown',
-        '<ACTORS>': actresses,
-        '<LABEL>': metadata.label or '',
-        '<SET>': metadata.series or '',
-        '<DIRECTOR>': metadata.director or '',
-        '<CONTENTID>': metadata.content_id or metadata.id,
+        "<ID>": metadata.id,
+        "<TITLE>": title,
+        "<ORIGINALTITLE>": metadata.original_title or title,
+        "<STUDIO>": metadata.maker or "Unknown",
+        "<YEAR>": year,
+        "<RELEASEDATE>": str(metadata.release_date)
+        if metadata.release_date
+        else "Unknown",
+        "<RUNTIME>": str(metadata.runtime) if metadata.runtime else "Unknown",
+        "<ACTORS>": actresses,
+        "<LABEL>": metadata.label or "",
+        "<SET>": metadata.series or "",
+        "<DIRECTOR>": metadata.director or "",
+        "<CONTENTID>": metadata.content_id or metadata.id,
     }
 
     for placeholder, value in replacements.items():
         result = result.replace(placeholder, value)
 
     # Remove empty brackets and clean up
-    result = re.sub(r'\[\s*\]', '', result)
-    result = re.sub(r'\(\s*\)', '', result)
-    result = re.sub(r'\s+', ' ', result)
+    result = re.sub(r"\[\s*\]", "", result)
+    result = re.sub(r"\(\s*\)", "", result)
+    result = re.sub(r"\s+", " ", result)
     result = result.strip()
 
     # Sanitize for filesystem
@@ -218,10 +217,7 @@ def format_template(
 
 
 def generate_sort_paths(
-    source_video: Path,
-    dest_folder: Path,
-    metadata: MovieMetadata,
-    config: SortConfig
+    source_video: Path, dest_folder: Path, metadata: MovieMetadata, config: SortConfig
 ) -> SortPaths:
     """
     Generate all paths for sorted movie files.
@@ -275,11 +271,7 @@ def generate_sort_paths(
     return paths
 
 
-def execute_sort(
-    paths: SortPaths,
-    move: bool = True,
-    dry_run: bool = False
-) -> bool:
+def execute_sort(paths: SortPaths, move: bool = True, dry_run: bool = False) -> bool:
     """
     Execute the file sorting operations.
 
@@ -293,15 +285,23 @@ def execute_sort(
     """
     if dry_run:
         console.print(f"[yellow][DRY RUN][/] Would create folder: {paths.folder_path}")
-        console.print(f"[yellow][DRY RUN][/] Would {'move' if move else 'copy'} video to: {paths.video_path}")
+        console.print(
+            f"[yellow][DRY RUN][/] Would {'move' if move else 'copy'} video to: {paths.video_path}"
+        )
         if paths.nfo_path:
             console.print(f"[yellow][DRY RUN][/] Would create NFO: {paths.nfo_path}")
         if paths.poster_path:
-            console.print(f"[yellow][DRY RUN][/] Would download poster: {paths.poster_path}")
+            console.print(
+                f"[yellow][DRY RUN][/] Would download poster: {paths.poster_path}"
+            )
         if paths.backdrop_path:
-            console.print(f"[yellow][DRY RUN][/] Would download backdrop: {paths.backdrop_path}")
+            console.print(
+                f"[yellow][DRY RUN][/] Would download backdrop: {paths.backdrop_path}"
+            )
         for sub in paths.subtitle_paths:
-            console.print(f"[yellow][DRY RUN][/] Would {'move' if move else 'copy'} subtitle to: {sub}")
+            console.print(
+                f"[yellow][DRY RUN][/] Would {'move' if move else 'copy'} subtitle to: {sub}"
+            )
         return True
 
     try:
@@ -334,7 +334,7 @@ def preview_sort(
     source_video: Path,
     dest_folder: Path,
     metadata: MovieMetadata,
-    config: Optional[SortConfig] = None
+    config: Optional[SortConfig] = None,
 ) -> dict:
     """
     Preview what the sort operation will do.
@@ -363,4 +363,3 @@ def preview_sort(
         "subtitle_files": [str(s) for s in paths.subtitle_paths],
         "original_subtitles": [str(s) for s in paths.original_subtitles],
     }
-
