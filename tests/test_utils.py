@@ -1,7 +1,6 @@
 # File: tests/test_utils.py
 """Tests for shared scraper utilities"""
 
-
 from javinizer.scrapers.utils import (
     normalize_id_variants,
     normalize_id,
