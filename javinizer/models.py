@@ -198,7 +198,14 @@ class RateLimitSettings(BaseModel):
 
 
 class Settings(BaseModel):
-    """Application settings"""
+    """Application settings with versioning support.
+
+    The schema_version field tracks the config format version for
+    future migrations when the settings structure changes.
+    """
+
+    # Schema version for config migration
+    schema_version: str = "1.0"
 
     # Scraper enable/disable
     scraper_dmm: bool = True
@@ -249,3 +256,4 @@ class Settings(BaseModel):
     # Concurrency settings
     max_concurrent_downloads: int = 5
     max_concurrent_scrapers: int = 3
+

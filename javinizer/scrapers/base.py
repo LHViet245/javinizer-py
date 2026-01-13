@@ -9,6 +9,12 @@ import httpx
 from javinizer.models import MovieMetadata, ProxyConfig
 from javinizer.logger import get_logger
 from javinizer.http.rate_limiter import DomainRateLimiter, get_rate_limiter
+from javinizer.exceptions import (
+    NetworkError,
+    ParseError,
+    RateLimitError,
+    MovieNotFoundError,
+)
 
 logger = get_logger(__name__)
 
@@ -185,13 +191,55 @@ class BaseScraper(ABC):
         Find and scrape metadata for a movie ID
 
         This is the main entry point for scraping.
+
+        Raises:
+            NetworkError: When network request fails
+            ParseError: When parsing response fails
+            RateLimitError: When rate limited by the server
         """
-        url = self.get_movie_url(movie_id)
-        if url is None:
-            return None
+        try:
+            url = self.get_movie_url(movie_id)
+            if url is None:
+                logger.debug(f"[{self.name}] Movie not found: {movie_id}")
+                return None
 
-        # Apply rate limiting before making request
-        limiter = self.rate_limiter or get_rate_limiter()
-        limiter.acquire(url)
+            # Apply rate limiting before making request
+            limiter = self.rate_limiter or get_rate_limiter()
+            limiter.acquire(url)
 
-        return self.scrape(url)
+            return self.scrape(url)
+
+        except (NetworkError, ParseError, RateLimitError):
+            # Re-raise our custom exceptions
+            raise
+        except httpx.TimeoutException as e:
+            raise NetworkError(
+                f"Request timed out after {self.timeout}s",
+                scraper_name=self.name,
+                movie_id=movie_id,
+                url=str(e.request.url) if e.request else None,
+            ) from e
+        except httpx.ConnectError as e:
+            raise NetworkError(
+                f"Connection failed: {e}",
+                scraper_name=self.name,
+                movie_id=movie_id,
+            ) from e
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 429:
+                raise RateLimitError(
+                    f"Rate limited by {self.name}",
+                    scraper_name=self.name,
+                    movie_id=movie_id,
+                ) from e
+            raise NetworkError(
+                f"HTTP {e.response.status_code}: {e.response.reason_phrase}",
+                scraper_name=self.name,
+                movie_id=movie_id,
+                status_code=e.response.status_code,
+                url=str(e.request.url),
+            ) from e
+        except Exception as e:
+            # Log unexpected errors but don't wrap them
+            logger.error(f"[{self.name}] Unexpected error for {movie_id}: {e}")
+            raise
