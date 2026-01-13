@@ -4,17 +4,14 @@ These tests verify that components work together correctly.
 They use mocked network responses to avoid external dependencies.
 """
 
-import pytest
 from pathlib import Path
 from datetime import date
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
 import tempfile
-import shutil
 
 from javinizer.models import MovieMetadata, Actress, Settings
 from javinizer.aggregator import aggregate_metadata
 from javinizer.scrapers.r18dev import R18DevScraper
-from javinizer.scrapers.dmm import DMMScraper
 from javinizer.exceptions import NetworkError, ScraperError
 
 
