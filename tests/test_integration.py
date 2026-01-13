@@ -126,20 +126,25 @@ class TestScraperMocking:
 
         scraper = R18DevScraper()
 
-        with patch.object(scraper, "client") as mock_client:
-            mock_response = Mock()
-            mock_response.json.return_value = mock_json
-            mock_response.status_code = 200
-            mock_client.get.return_value = mock_response
+        # Create mock client and response
+        mock_response = Mock()
+        mock_response.json.return_value = mock_json
+        mock_response.status_code = 200
 
-            # Test the parsing logic
-            result = scraper.scrape("https://r18.dev/videos/vod/movies/detail/-/id=ipx00486/")
+        mock_client = Mock()
+        mock_client.get.return_value = mock_response
 
-            assert result is not None
-            assert result.id == "IPX-486"
-            assert result.title == "Test Movie"
-            assert len(result.actresses) == 1
-            assert result.actresses[0].japanese_name == "桃乃木かな"
+        # Directly set the private _client attribute
+        scraper._client = mock_client
+
+        # Test the parsing logic
+        result = scraper.scrape("https://r18.dev/videos/vod/movies/detail/-/id=ipx00486/")
+
+        assert result is not None
+        assert result.id == "IPX-486"
+        assert result.title == "Test Movie"
+        assert len(result.actresses) == 1
+        assert result.actresses[0].japanese_name == "桃乃木かな"
 
 
 class TestExceptionHandling:

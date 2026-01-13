@@ -13,7 +13,6 @@ from javinizer.exceptions import (
     NetworkError,
     ParseError,
     RateLimitError,
-    MovieNotFoundError,
 )
 
 logger = get_logger(__name__)
