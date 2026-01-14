@@ -1,6 +1,7 @@
 """Find command module"""
 
 import json
+import re
 from typing import Optional
 
 import click
@@ -15,13 +16,29 @@ from javinizer.aggregator import aggregate_metadata
 from javinizer.nfo import generate_nfo
 
 
+# URL patterns to detect scraper source
+URL_PATTERNS = {
+    "r18dev": [r"r18\.dev", r"r18dev"],
+    "dmm": [r"dmm\.co\.jp", r"fanza\.com"],
+    "javlibrary": [r"javlibrary\.com"],
+    "javbus": [r"javbus\.com"],
+    "mgstage": [r"mgstage\.com"],
+}
+
+
 @click.command()
-@click.argument("movie_id")
+@click.argument("movie_id", required=False)
 @click.option(
     "--source",
     "-s",
     default="r18dev,javlibrary,dmm",
     help="Scraper source(s), comma-separated (dmm, r18dev, javlibrary). Default: all",
+)
+@click.option(
+    "--url",
+    "-u",
+    multiple=True,
+    help="Direct URL(s) to scrape. Can be specified multiple times for aggregation.",
 )
 @click.option(
     "--proxy",
@@ -39,8 +56,9 @@ from javinizer.nfo import generate_nfo
 @click.option("--log-file", help="Path to log file")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose (debug) logging")
 def find(
-    movie_id: str,
+    movie_id: Optional[str],
     source: str,
+    url: tuple[str, ...],
     proxy: Optional[str],
     nfo: bool,
     as_json: bool,
@@ -48,7 +66,7 @@ def find(
     log_file: Optional[str],
     verbose: bool,
 ):
-    """Find metadata for a movie ID
+    """Find metadata for a movie ID or direct URL(s)
 
     By default, searches all sources (r18dev, javlibrary, dmm) and aggregates results.
 
@@ -58,10 +76,19 @@ def find(
 
         javinizer find IPX-486 --source r18dev
 
+        javinizer find --url https://r18.dev/videos/vod/movies/detail/-/id=ipx00486/
+
+        javinizer find --url URL1 --url URL2  (aggregate from multiple URLs)
+
         javinizer find IPX-486 --proxy socks5://127.0.0.1:1080
     """
     # Load settings first to check for default log file
     settings = load_settings()
+
+    # Validate: either movie_id or url must be provided
+    if not movie_id and not url:
+        console.print("[red]Error: Either MOVIE_ID or --url must be provided[/]")
+        raise click.UsageError("Either MOVIE_ID or --url must be provided")
 
     # Configure logging
     # CLI arg > Settings > None
@@ -70,37 +97,41 @@ def find(
 
     logger = configure_logging(verbose=verbose, log_file=final_log_file)
 
-    logger.debug(f"Starting find command for {movie_id}")
-
-    # Parse sources and expand aliases (dmm -> [dmm_new, dmm])
-    sources = expand_sources([s.strip() for s in source.split(",")])
-
-    console.print(f"[bold blue]🔍 Searching for:[/] {movie_id}")
-    console.print(f"[dim]Sources: {', '.join(sources)}[/]")
-    if final_log_file:
-        console.print(f"[dim]Logging to: {final_log_file}[/]")
-
     # Override proxy if specified
     if proxy:
         proxy_config = ProxyConfig(enabled=True, url=proxy)
-        console.print(f"[dim]Proxy: {proxy}[/]")
     else:
         proxy_config = settings.proxy
+
+    # Direct URL scraping mode
+    if url:
+        results = _scrape_from_urls(url, proxy_config, settings, console)
+        if not results:
+            console.print("[yellow]⚠️  No results from provided URLs[/]")
+            return
+    else:
+        # Normal movie ID search
+        logger.debug(f"Starting find command for {movie_id}")
+
+        # Parse sources and expand aliases (dmm -> [dmm_new, dmm])
+        sources = expand_sources([s.strip() for s in source.split(",")])
+
+        console.print(f"[bold blue]🔍 Searching for:[/] {movie_id}")
+        console.print(f"[dim]Sources: {', '.join(sources)}[/]")
+        if final_log_file:
+            console.print(f"[dim]Logging to: {final_log_file}[/]")
         if proxy_config.enabled:
             console.print(f"[dim]Proxy: {proxy_config.url}[/]")
+        console.print()
 
-    console.print()
+        # Scrape from all sources
+        from javinizer.cli_common import scrape_parallel
 
-    # Scrape from all sources
-    results: dict[str, MovieMetadata] = {}
+        results = scrape_parallel(movie_id, sources, proxy_config, settings, console)
 
-    from javinizer.cli_common import scrape_parallel
-
-    results = scrape_parallel(movie_id, sources, proxy_config, settings, console)
-
-    if not results:
-        console.print(f"\n[yellow]⚠️  No results found for {movie_id}[/]")
-        return
+        if not results:
+            console.print(f"\n[yellow]⚠️  No results found for {movie_id}[/]")
+            return
 
     console.print()
 
@@ -198,3 +229,90 @@ def _output_json(metadata: MovieMetadata):
     # Convert to dict, handling date serialization
     data = metadata.model_dump(mode="json")
     console.print_json(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+def _detect_scraper_from_url(url: str) -> Optional[str]:
+    """Detect which scraper to use based on URL pattern"""
+    for scraper_name, patterns in URL_PATTERNS.items():
+        for pattern in patterns:
+            if re.search(pattern, url, re.IGNORECASE):
+                return scraper_name
+    return None
+
+
+def _get_scraper_for_url(
+    scraper_name: str, proxy_config: ProxyConfig, settings
+) -> Optional[object]:
+    """Get the scraper instance for a given scraper name"""
+    from javinizer.scrapers import (
+        R18DevScraper,
+        DMMScraper,
+        JavlibraryScraper,
+        JavBusScraper,
+        MGStageScraper,
+    )
+
+    scraper_map = {
+        "r18dev": R18DevScraper,
+        "dmm": DMMScraper,
+        "javlibrary": JavlibraryScraper,
+        "javbus": JavBusScraper,
+        "mgstage": MGStageScraper,
+    }
+
+    scraper_class = scraper_map.get(scraper_name)
+    if not scraper_class:
+        return None
+
+    # Special handling for javlibrary (needs cookies)
+    if scraper_name == "javlibrary":
+        return scraper_class(
+            timeout=settings.timeout,
+            proxy=proxy_config if proxy_config.enabled else None,
+            cookies=settings.javlibrary_cookies or None,
+            user_agent=settings.javlibrary_user_agent or None,
+        )
+
+    return scraper_class(
+        timeout=settings.timeout,
+        proxy=proxy_config if proxy_config.enabled else None,
+    )
+
+
+def _scrape_from_urls(
+    urls: tuple[str, ...],
+    proxy_config: ProxyConfig,
+    settings,
+    console,
+) -> dict[str, MovieMetadata]:
+    """Scrape metadata from direct URLs"""
+    results: dict[str, MovieMetadata] = {}
+
+    console.print(f"[bold blue]🔗 Scraping from {len(urls)} URL(s)[/]")
+
+    for url in urls:
+        scraper_name = _detect_scraper_from_url(url)
+        if not scraper_name:
+            console.print(f"[yellow]⚠️  Unknown URL format: {url}[/]")
+            continue
+
+        console.print(f"[dim]  → {scraper_name}: {url[:60]}...[/]")
+
+        scraper = _get_scraper_for_url(scraper_name, proxy_config, settings)
+        if not scraper:
+            console.print(f"[yellow]⚠️  Scraper not available: {scraper_name}[/]")
+            continue
+
+        try:
+            with scraper:
+                metadata = scraper.scrape(url)
+                if metadata:
+                    results[scraper_name] = metadata
+                    console.print(f"[green]  ✓ {scraper_name}: {metadata.id}[/]")
+                else:
+                    console.print(f"[yellow]  ✗ {scraper_name}: No data[/]")
+        except Exception as e:
+            console.print(f"[red]  ✗ {scraper_name}: {e}[/]")
+
+    return results
+
