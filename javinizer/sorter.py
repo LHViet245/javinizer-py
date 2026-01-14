@@ -27,6 +27,15 @@ class SortConfig:
     file_format: str = "<TITLE> (<YEAR>) [<ID>]"
     nfo_format: str = "<TITLE> (<YEAR>) [<ID>]"
 
+    # Multi-level output folder (e.g., ["<ACTORS>", "<YEAR>"])
+    # Creates nested structure: dest/<ACTORS>/<YEAR>/<folder_format>/
+    output_folder: list[str] = None  # type: ignore[assignment]
+
+    def __post_init__(self):
+        """Initialize default values for mutable fields"""
+        if self.output_folder is None:
+            self.output_folder = []
+
     # Image filenames (Jellyfin standard)
     poster_filename: str = "cover.jpg"
     backdrop_filename: str = "backdrop.jpg"
@@ -236,8 +245,17 @@ def generate_sort_paths(
     file_name = format_template(config.file_format, metadata, config)
     nfo_name = format_template(config.nfo_format, metadata, config)
 
-    # Build paths
-    movie_folder = dest_folder / folder_name
+    # Build path with optional nested output_folder structure
+    # e.g., ["<ACTORS>", "<YEAR>"] -> dest/<ACTORS>/<YEAR>/<folder_format>/
+    base_folder = dest_folder
+    if config.output_folder:
+        for level_template in config.output_folder:
+            level_name = format_template(level_template, metadata, config)
+            # Skip empty levels
+            if level_name and level_name.strip():
+                base_folder = base_folder / level_name
+
+    movie_folder = base_folder / folder_name
     video_path = movie_folder / f"{file_name}{source_video.suffix}"
 
     paths = SortPaths(

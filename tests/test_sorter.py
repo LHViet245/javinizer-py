@@ -80,3 +80,144 @@ def test_generate_sort_paths_length_limit(sample_metadata, default_config):
     # ID (7) + " - " (3) + Title (50) + " (" (2) + Year (4) + ")" (1) ~ 67 chars
     assert len(folder_name) < 100
     assert "AAAA" in folder_name
+
+
+# ============================================================
+# Advanced Sorting Tests - Multi-level folder support
+# ============================================================
+
+
+class TestMultiLevelFolderSorting:
+    """Tests for output_folder multi-level folder structure"""
+
+    def test_output_folder_single_level(self, sample_metadata):
+        """Test single-level output folder (e.g., by actress)"""
+        config = SortConfig(
+            folder_format="<ID>",
+            output_folder=["<ACTORS>"],
+        )
+        video_path = Path("video.mp4")
+        dest_root = Path("/movies")
+
+        paths = generate_sort_paths(video_path, dest_root, sample_metadata, config)
+
+        # Structure: /movies/Test Actress/IPX-486/
+        folder_parts = paths.folder_path.parts
+        assert "IPX-486" in folder_parts[-1]  # Movie folder
+        assert "Actress" in folder_parts[-2] or "Test" in folder_parts[-2]  # Actress folder
+
+    def test_output_folder_two_levels(self, sample_metadata):
+        """Test two-level output folder (e.g., actress + year)"""
+        config = SortConfig(
+            folder_format="<ID>",
+            output_folder=["<ACTORS>", "<YEAR>"],
+        )
+        video_path = Path("video.mp4")
+        dest_root = Path("/movies")
+
+        paths = generate_sort_paths(video_path, dest_root, sample_metadata, config)
+
+        # Structure: /movies/<ACTORS>/<YEAR>/IPX-486/
+        folder_parts = paths.folder_path.parts
+        assert "IPX-486" in folder_parts[-1]  # Movie folder
+        assert "2024" in folder_parts[-2]  # Year folder
+
+    def test_output_folder_by_studio(self, sample_metadata):
+        """Test output folder by studio"""
+        config = SortConfig(
+            folder_format="<ID> - <TITLE>",
+            output_folder=["<STUDIO>"],
+        )
+        video_path = Path("video.mp4")
+        dest_root = Path("/movies")
+
+        paths = generate_sort_paths(video_path, dest_root, sample_metadata, config)
+
+        # Structure: /movies/IdeaPocket/IPX-486 - Title/
+        folder_parts = paths.folder_path.parts
+        assert "IdeaPocket" in folder_parts[-2]
+
+    def test_output_folder_empty_list(self, sample_metadata):
+        """Test with empty output_folder (backward compatible)"""
+        config = SortConfig(
+            folder_format="<ID>",
+            output_folder=[],
+        )
+        video_path = Path("video.mp4")
+        dest_root = Path("/movies")
+
+        paths = generate_sort_paths(video_path, dest_root, sample_metadata, config)
+
+        # Structure: /movies/IPX-486/ (flat, like before)
+        assert paths.folder_path.parent == dest_root
+        assert paths.folder_path.name == "IPX-486"
+
+    def test_output_folder_none_default(self, sample_metadata):
+        """Test default behavior (no output_folder)"""
+        config = SortConfig(
+            folder_format="<ID>",
+        )
+        video_path = Path("video.mp4")
+        dest_root = Path("/movies")
+
+        paths = generate_sort_paths(video_path, dest_root, sample_metadata, config)
+
+        # Default should create flat structure
+        assert paths.folder_path.parent == dest_root
+
+    def test_output_folder_three_levels(self, sample_metadata):
+        """Test three-level nesting"""
+        config = SortConfig(
+            folder_format="<ID>",
+            output_folder=["<STUDIO>", "<ACTORS>", "<YEAR>"],
+        )
+        video_path = Path("video.mp4")
+        dest_root = Path("/movies")
+
+        paths = generate_sort_paths(video_path, dest_root, sample_metadata, config)
+
+        # Structure: /movies/<STUDIO>/<ACTORS>/<YEAR>/IPX-486/
+        folder_parts = paths.folder_path.parts
+        assert len(folder_parts) >= 4  # At least 4 levels deep
+
+    def test_output_folder_group_actress(self, sample_metadata):
+        """Test group actress with multiple actresses"""
+        # Add another actress
+        sample_metadata.actresses.append(
+            Actress(first_name="Second", last_name="Actress")
+        )
+
+        config = SortConfig(
+            folder_format="<ID>",
+            output_folder=["<ACTORS>"],
+            group_actress=True,  # Use @Group for multiple
+        )
+        video_path = Path("video.mp4")
+        dest_root = Path("/movies")
+
+        paths = generate_sort_paths(video_path, dest_root, sample_metadata, config)
+
+        # Should use @Group for multiple actresses
+        folder_str = str(paths.folder_path)
+        assert "@Group" in folder_str
+
+    def test_output_folder_individual_actresses(self, sample_metadata):
+        """Test listing all actresses (no grouping)"""
+        sample_metadata.actresses.append(
+            Actress(first_name="Second", last_name="Actress")
+        )
+
+        config = SortConfig(
+            folder_format="<ID>",
+            output_folder=["<ACTORS>"],
+            group_actress=False,  # List all
+        )
+        video_path = Path("video.mp4")
+        dest_root = Path("/movies")
+
+        paths = generate_sort_paths(video_path, dest_root, sample_metadata, config)
+
+        folder_str = str(paths.folder_path)
+        # Should contain actress names, not @Group
+        assert "@Group" not in folder_str
+
