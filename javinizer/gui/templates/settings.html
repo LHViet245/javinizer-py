@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Settings</h1>
+<p style="color: var(--text-dim); margin-bottom: 2rem;">
+    Configure Javinizer behavior
+</p>
+
+<form id="settingsForm">
+    <div class="card">
+        <h2>🌐 Proxy Settings</h2>
+        <div class="field">
+            <label for="proxy_enabled">Enable Proxy</label>
+            <input type="checkbox" id="proxy_enabled" {% if settings.proxy.enabled %}checked{% endif %}>
+        </div>
+        <div class="field">
+            <label for="proxy_url">Proxy URL</label>
+            <input type="text" id="proxy_url" value="{{ settings.proxy.url or '' }}"
+                placeholder="socks5://127.0.0.1:1080">
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔧 Scraper Settings</h2>
+        <div class="field">
+            <label for="timeout">Request Timeout (seconds)</label>
+            <input type="number" id="timeout" value="{{ settings.timeout }}" min="5" max="120">
+        </div>
+        <div class="field">
+            <label for="sleep">Sleep Between Requests (seconds)</label>
+            <input type="number" id="sleep" value="{{ settings.sleep_between_requests }}" min="0" max="30" step="0.5">
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📁 CSV Mapping</h2>
+        <div class="field">
+            <label for="csv_enabled">Enable CSV Mapping</label>
+            <input type="checkbox" id="csv_enabled" {% if settings.csv.enabled %}checked{% endif %}>
+        </div>
+        <div class="field">
+            <label for="genres_csv">Genres CSV Path</label>
+            <input type="text" id="genres_csv" value="{{ settings.csv.genres_csv }}">
+        </div>
+        <div class="field">
+            <label for="studios_csv">Studios CSV Path</label>
+            <input type="text" id="studios_csv" value="{{ settings.csv.studios_csv }}">
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>💾 Cache Settings</h2>
+        <div class="field">
+            <label for="cache_enabled">Enable Metadata Cache</label>
+            <input type="checkbox" id="cache_enabled" {% if settings.cache_enabled %}checked{% endif %}>
+        </div>
+        <div class="field">
+            <label for="cache_ttl">Cache TTL (days)</label>
+            <input type="number" id="cache_ttl" value="{{ settings.cache_ttl_days }}" min="1" max="365">
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit">💾 Save Settings</button>
+        <button type="button" onclick="location.reload()" style="background: var(--border);">Reset</button>
+    </div>
+</form>
+
+<script>
+    document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const data = {
+            timeout: parseFloat(document.getElementById('timeout').value),
+            sleep_between_requests: parseFloat(document.getElementById('sleep').value),
+            cache_enabled: document.getElementById('cache_enabled').checked,
+            cache_ttl_days: parseInt(document.getElementById('cache_ttl').value),
+        };
+
+        try {
+            const response = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+
+            if (result.status === 'ok') {
+                alert('Settings saved successfully!');
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (err) {
+            alert('Error saving settings: ' + err.message);
+        }
+    });
+</script>
+{% endblock %}

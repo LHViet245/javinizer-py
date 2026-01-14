@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Welcome to Javinizer</h1>
+<p style="color: var(--text-dim); margin-bottom: 2rem;">
+    A powerful JAV metadata scraper and organizer
+</p>
+
+<div class="search-box">
+    <form action="/search" method="get" style="display: flex; gap: 1rem; flex: 1;">
+        <input type="search" name="q" placeholder="Search by Movie ID (e.g., IPX-486)" />
+        <button type="submit">🔍 Search</button>
+    </form>
+</div>
+
+<div class="grid">
+    <div class="card stat">
+        <div class="stat-value">6</div>
+        <div class="stat-label">Scrapers Available</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-value">✓</div>
+        <div class="stat-label">System Status</div>
+    </div>
+    <div class="card stat">
+        <div class="stat-value">v0.1</div>
+        <div class="stat-label">Version</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Quick Actions</h2>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/search"><button>🔍 Search Movie</button></a>
+        <a href="/settings"><button>⚙️ Settings</button></a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Available Scrapers</h2>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+        <span class="badge success">R18Dev</span>
+        <span class="badge success">DMM</span>
+        <span class="badge success">JavLibrary</span>
+        <span class="badge success">JavBus</span>
+        <span class="badge success">MGStage</span>
+        <span class="badge">DMM New (Playwright)</span>
+    </div>
+</div>
+{% endblock %}

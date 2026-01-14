@@ -46,6 +46,13 @@ main.add_command(thumbs)
 main.add_command(info)
 main.add_command(status)
 
+# GUI command (optional dependency)
+try:
+    from javinizer.commands.gui import gui
+    main.add_command(gui)
+except ImportError:
+    pass  # GUI dependencies not installed
+
 
 if __name__ == "__main__":
     main()
