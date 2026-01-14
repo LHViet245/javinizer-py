@@ -1,0 +1,27 @@
+# Javinizer Studio Mapping
+# Format: Original,Replacement
+# Leave Replacement empty to filter out the studio
+# Lines starting with # are comments
+#
+# Examples:
+# S1 NO.1 STYLE,S1
+# アイデアポケット,Idea Pocket
+#
+S1 NO.1 STYLE,S1
+S1 NO.1 Style,S1
+S1NO.1STYLE,S1
+SODクリエイト,SOD Create
+SODクリエイト株式会社,SOD Create
+プレステージ,PRESTIGE
+アイデアポケット,Idea Pocket
+IDEAPOCKET,Idea Pocket
+マキシング,Maxing
+ムーディーズ,MOODYZ
+MOODYZ DIVA,MOODYZ
+エスワン ナンバーワン スタイル,S1
+FALENO,FALENO
+FALENOstar,FALENO
+アタッカーズ,Attackers
+ATTACKERS,Attackers
+本中,Honnaka
+HONNAKA,Honnaka

@@ -197,6 +197,14 @@ class RateLimitSettings(BaseModel):
     )  # per-domain overrides
 
 
+class CSVSettings(BaseModel):
+    """CSV-based mapping settings for genres and studios"""
+
+    enabled: bool = True
+    genres_csv: str = "genres.csv"  # Path to genres mapping CSV
+    studios_csv: str = "studios.csv"  # Path to studios mapping CSV
+    auto_apply: bool = True  # Automatically apply mappings to scraped metadata
+
 class Settings(BaseModel):
     """Application settings with versioning support.
 
@@ -247,6 +255,9 @@ class Settings(BaseModel):
 
     # Rate limiting settings
     rate_limit: RateLimitSettings = Field(default_factory=RateLimitSettings)
+
+    # CSV mapping settings
+    csv: CSVSettings = Field(default_factory=CSVSettings)
 
     # Cache settings
     cache_enabled: bool = True
