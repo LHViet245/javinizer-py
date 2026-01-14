@@ -23,8 +23,12 @@ class JavBusScraper(BaseScraper):
     JavBus is a popular JAV database with EN/JP/CN support.
     This scraper parses HTML pages to extract metadata.
     
-    Note: JavBus uses age/region verification. This scraper
-    automatically sets cookies to bypass verification.
+    Note: JavBus uses region-based verification that requires
+    a Japan IP address to access movie pages directly. Without
+    a Japan VPN/proxy, requests will redirect to a verification
+    quiz that cannot be bypassed with cookies alone.
+    
+    For best results, use a Japan SOCKS5 proxy.
     """
 
     name = "javbus"
