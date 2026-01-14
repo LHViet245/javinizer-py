@@ -1,12 +1,12 @@
 # Workspace Rules - Javinizer-py
 
-> **Note**: Các quy tắc chung về code style, testing, version control, security đã được định nghĩa trong [GEMINI.md](file:///C:/Users/gadan/.gemini/GEMINI.md). File này chỉ chứa các quy tắc **đặc thù cho dự án javinizer-py**.
+> **Note**: General rules regarding code style, testing, version control, and security are defined in [GEMINI.md](file:///C:/Users/gadan/.gemini/GEMINI.md). This file only contains rules **specific to the javinizer-py project**.
 
 ---
 
 ## 1. Project Overview
 
-**Javinizer-py** là công cụ Python để tổ chức và quản lý metadata cho JAV (Japanese Adult Video). Dự án sử dụng scrapers để thu thập thông tin từ nhiều nguồn khác nhau.
+**Javinizer-py** is a Python tool for organizing and managing metadata for JAV (Japanese Adult Video). The project uses scrapers to collect information from various sources.
 
 ### Tech Stack
 
@@ -22,27 +22,34 @@
 
 **ALWAYS** use the project's virtual environment for all Python operations.
 
-### Activation
+### Agent Protocol (CRITICAL)
+
+When executing `python` or `pip` commands in the terminal, you **MUST** ensure the project's virtual environment is used.
+
+**Preferred Method:** Use the direct path to the executable. This is the safest way to guarantee the correct environment is used, regardless of shell activation state.
+
+- **Windows**: `.\env\Scripts\python.exe`
+- **Linux/macOS**: `./env/bin/python`
+
+**Example**:
 
 ```powershell
-# Windows (PowerShell)
-& env\Scripts\Activate.ps1
+# ✅ Correct
+.\env\Scripts\python.exe -m javinizer.scrapers.dmm
+.\env\Scripts\pip.exe install -r requirements.txt
 
-# Windows (CMD)
-env\Scripts\activate.bat
-
-# Linux/macOS
-source env/bin/activate
+# ❌ Incorrect (unless verified active)
+python -m javinizer.scrapers.dmm
+pip install package
 ```
 
 ### Rules
 
 | Rule | Description |
 |------|-------------|
-| **Always activate first** | Before running any Python command, activate the venv |
-| **Install packages in venv** | Never use `pip install` globally for project deps |
-| **Use venv Python** | Run scripts with `python` after activation |
-| **Check activation** | Prompt should show `(env)` prefix when activated |
+| **Explicit Path** | **PREFER** using `.\env\Scripts\python.exe` over `python` |
+| **Verify Context** | If using `python`, ensure it resolves to `.../env/...` using `where.exe python` |
+| **Install safely** | Always use `.\env\Scripts\pip.exe` for package installation |
 
 ---
 
@@ -165,7 +172,7 @@ async def fetch_with_rate_limit(urls: list[str], delay: float = 1.0):
 
 ## 7. Available Workflows
 
-Các workflows có sẵn trong `.agent/workflows/`:
+Workflows available in `.agent/workflows/`:
 
 | Workflow | Purpose |
 |----------|---------|
