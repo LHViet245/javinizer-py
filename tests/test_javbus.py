@@ -151,11 +151,12 @@ class TestJavBusScraperNetwork:
         mock_client = Mock()
         mock_client.get.return_value = mock_response
         
-        # Set the mocked client
-        scraper._client = mock_client
+        # Set the mocked client - JavBusScraper uses _curl_client
+        scraper._curl_client = mock_client
         
         result = scraper.scrape("https://www.javbus.com/IPX-486")
         
         assert result is not None
         assert result.id == "IPX-486"
         assert "Test Title" in result.title
+
