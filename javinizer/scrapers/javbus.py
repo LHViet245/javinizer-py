@@ -22,6 +22,9 @@ class JavBusScraper(BaseScraper):
 
     JavBus is a popular JAV database with EN/JP/CN support.
     This scraper parses HTML pages to extract metadata.
+    
+    Note: JavBus uses age/region verification. This scraper
+    automatically sets cookies to bypass verification.
     """
 
     name = "javbus"
@@ -34,6 +37,12 @@ class JavBusScraper(BaseScraper):
         "zh": "https://www.javbus.com/zh",
     }
 
+    # Age verification bypass cookies
+    AGE_COOKIES = {
+        "existmag": "all",
+        "age": "verified",
+    }
+
     def __init__(
         self,
         timeout: float = 30.0,
@@ -42,10 +51,15 @@ class JavBusScraper(BaseScraper):
         user_agent: Optional[str] = None,
         language: str = "en",
     ):
+        # Merge age bypass cookies with any user-provided cookies
+        merged_cookies = {**self.AGE_COOKIES}
+        if cookies:
+            merged_cookies.update(cookies)
+        
         super().__init__(
             timeout=timeout,
             proxy=proxy,
-            cookies=cookies,
+            cookies=merged_cookies,
             user_agent=user_agent,
         )
         self.language = language
