@@ -4,6 +4,7 @@ from .base import BaseScraper
 from .dmm import DMMScraper
 from .r18dev import R18DevScraper
 from .javlibrary import JavlibraryScraper
+from .javbus import JavBusScraper
 
 # Optional: DMMNewScraper requires playwright
 try:
@@ -20,6 +21,7 @@ __all__ = [
     "DMMScraper",
     "R18DevScraper",
     "JavlibraryScraper",
+    "JavBusScraper",
     "DMMNewScraper",
     "is_playwright_available",
 ]
