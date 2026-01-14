@@ -68,6 +68,49 @@ class JavBusScraper(BaseScraper):
         )
         self.language = language
         self.base_url = self.LANG_URLS.get(language, self.LANG_URLS["en"])
+        self._curl_client = None
+
+    @property
+    def client(self):
+        """
+        Override client to force curl_cffi with browser impersonation.
+        
+        JavBus requires browser-like TLS fingerprints to bypass region detection.
+        SOCKS proxy may not work - use HTTP proxy or direct connection.
+        """
+        if self._curl_client is not None:
+            return self._curl_client
+        
+        try:
+            from curl_cffi import requests
+            
+            # Use curl_cffi for browser impersonation
+            proxy_url = self._get_proxy_url()
+            
+            # Note: curl_cffi has issues with SOCKS on Windows
+            # If SOCKS proxy fails, it will fall through to direct connection
+            proxies = None
+            if proxy_url and not proxy_url.startswith("socks"):
+                proxies = {"http": proxy_url, "https": proxy_url}
+            
+            self._curl_client = requests.Session(
+                impersonate="chrome124",
+                headers={"User-Agent": self.user_agent},
+                cookies=self.cookies,
+                proxies=proxies,
+                timeout=self.timeout,
+                allow_redirects=True,
+                verify=self.verify_ssl if hasattr(self, 'verify_ssl') else True,
+            )
+            logger.debug(f"[{self.name}] Using curl_cffi with Chrome impersonation")
+            return self._curl_client
+            
+        except ImportError:
+            logger.warning(f"[{self.name}] curl_cffi not available, falling back to httpx")
+            return super().client
+        except Exception as e:
+            logger.warning(f"[{self.name}] curl_cffi init failed: {e}, falling back to httpx")
+            return super().client
 
     def get_search_url(self, movie_id: str) -> str:
         """Build search URL for movie ID"""
