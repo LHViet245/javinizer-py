@@ -10,10 +10,10 @@ set "SCRIPT_DIR=%~dp0"
 REM Check for virtual environments in order of preference
 set "VENV_PYTHON="
 
-if exist "%SCRIPT_DIR%env\Scripts\python.exe" (
-    set "VENV_PYTHON=%SCRIPT_DIR%env\Scripts\python.exe"
-) else if exist "%SCRIPT_DIR%.venv\Scripts\python.exe" (
+if exist "%SCRIPT_DIR%.venv\Scripts\python.exe" (
     set "VENV_PYTHON=%SCRIPT_DIR%.venv\Scripts\python.exe"
+) else if exist "%SCRIPT_DIR%env\Scripts\python.exe" (
+    set "VENV_PYTHON=%SCRIPT_DIR%env\Scripts\python.exe"
 )
 
 if not defined VENV_PYTHON (

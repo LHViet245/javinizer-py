@@ -9,6 +9,7 @@ from javinizer.scrapers import (
     R18DevScraper,
     JavlibraryScraper,
     DMMNewScraper,
+    MGStageScraper,
 )
 
 # Global console instance
@@ -22,6 +23,7 @@ SCRAPERS = {
     "r18": R18DevScraper,
     "javlibrary": JavlibraryScraper,
     "jav": JavlibraryScraper,
+    "mgstage": MGStageScraper,
 }
 
 # Add dmm_new if playwright is available

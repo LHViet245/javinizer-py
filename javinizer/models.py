@@ -188,14 +188,40 @@ class RetrySettings(BaseModel):
 
 
 class RateLimitSettings(BaseModel):
-    """Rate limiting settings per domain"""
+    """Advanced rate limiting settings per domain"""
 
     enabled: bool = True
     default_delay: float = 1.0  # seconds between requests to same domain
     domain_delays: dict[str, float] = Field(
         default_factory=dict
     )  # per-domain overrides
+    
+    # Advanced rate limiting
+    burst_limit: int = 5  # Max requests in burst window
+    burst_window: float = 10.0  # Burst window in seconds
+    cooldown_multiplier: float = 1.5  # Increase delay on 429 errors
+    max_delay: float = 60.0  # Maximum delay after cooldown
 
+
+class CustomPatternSettings(BaseModel):
+    """Custom regex patterns for movie ID extraction"""
+
+    enabled: bool = False
+    patterns: list[str] = Field(default_factory=list)  # Custom regex patterns
+    priority: str = "before"  # "before" or "after" built-in patterns
+    
+    # Example patterns:
+    # - r"(CUSTOM)[-_]?(\\d{4})" for custom studio format
+    # - r"(\\d{4})[-_]([A-Z]{3})" for reversed format
+
+
+class CSVSettings(BaseModel):
+    """CSV-based mapping settings for genres and studios"""
+
+    enabled: bool = True
+    genres_csv: str = "genres.csv"  # Path to genres mapping CSV
+    studios_csv: str = "studios.csv"  # Path to studios mapping CSV
+    auto_apply: bool = True  # Automatically apply mappings to scraped metadata
 
 class Settings(BaseModel):
     """Application settings with versioning support.
@@ -247,6 +273,14 @@ class Settings(BaseModel):
 
     # Rate limiting settings
     rate_limit: RateLimitSettings = Field(default_factory=RateLimitSettings)
+
+    # CSV mapping settings
+    csv: CSVSettings = Field(default_factory=CSVSettings)
+
+    # Custom pattern settings for movie ID extraction
+    custom_patterns: CustomPatternSettings = Field(
+        default_factory=CustomPatternSettings
+    )
 
     # Cache settings
     cache_enabled: bool = True

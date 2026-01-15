@@ -15,7 +15,7 @@ from javinizer.commands.status import status
 
 @click.group()
 @click.version_option(version=__version__)
-def main():
+def main() -> None:
     """Javinizer - JAV Metadata Scraper (Python Edition)
 
     A command-line tool to scrape and organize Japanese Adult Video metadata.
@@ -45,6 +45,13 @@ main.add_command(config)
 main.add_command(thumbs)
 main.add_command(info)
 main.add_command(status)
+
+# GUI command (optional dependency)
+try:
+    from javinizer.commands.gui import gui
+    main.add_command(gui)
+except ImportError:
+    pass  # GUI dependencies not installed
 
 
 if __name__ == "__main__":

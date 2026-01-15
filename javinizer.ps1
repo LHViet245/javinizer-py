@@ -19,8 +19,8 @@ if (-not $ScriptDir) {
 
 # Check for virtual environments in order of preference
 $VenvPaths = @(
-    Join-Path $ScriptDir "env\Scripts\python.exe"
     Join-Path $ScriptDir ".venv\Scripts\python.exe"
+    Join-Path $ScriptDir "env\Scripts\python.exe"
 )
 
 $PythonExe = $null

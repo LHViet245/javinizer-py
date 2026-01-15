@@ -4,15 +4,12 @@ import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
-
-from .models import MovieMetadata
-from .matcher import find_subtitle_files, get_subtitle_language
+from typing import Optional, Any
 
 from rich.console import Console
 
-console = Console()
-
+from .matcher import find_subtitle_files, get_subtitle_language
+from .models import MovieMetadata
 
 # Invalid characters for Windows filenames
 INVALID_FILENAME_CHARS = r'\/:*?"<>|'
@@ -26,6 +23,10 @@ class SortConfig:
     folder_format: str = "<TITLE> (<YEAR>) [<ID>]"
     file_format: str = "<TITLE> (<YEAR>) [<ID>]"
     nfo_format: str = "<TITLE> (<YEAR>) [<ID>]"
+
+    # Multi-level output folder (e.g., ["<ACTORS>", "<YEAR>"])
+    # Creates nested structure: dest/<ACTORS>/<YEAR>/<folder_format>/
+    output_folder: list[str] = field(default_factory=list)
 
     # Image filenames (Jellyfin standard)
     poster_filename: str = "cover.jpg"
@@ -74,7 +75,7 @@ def sanitize_filename(name: str) -> str:
     """
     # Replace invalid characters
     for char in INVALID_FILENAME_CHARS:
-        if char == "/":
+        if char == "/" or char == ":":
             name = name.replace(char, "-")
         else:
             name = name.replace(char, "")
@@ -236,8 +237,17 @@ def generate_sort_paths(
     file_name = format_template(config.file_format, metadata, config)
     nfo_name = format_template(config.nfo_format, metadata, config)
 
-    # Build paths
-    movie_folder = dest_folder / folder_name
+    # Build path with optional nested output_folder structure
+    # e.g., ["<ACTORS>", "<YEAR>"] -> dest/<ACTORS>/<YEAR>/<folder_format>/
+    base_folder = dest_folder
+    if config.output_folder:
+        for level_template in config.output_folder:
+            level_name = format_template(level_template, metadata, config)
+            # Skip empty levels
+            if level_name and level_name.strip():
+                base_folder = base_folder / level_name
+
+    movie_folder = base_folder / folder_name
     video_path = movie_folder / f"{file_name}{source_video.suffix}"
 
     paths = SortPaths(
@@ -284,6 +294,7 @@ def execute_sort(paths: SortPaths, move: bool = True, dry_run: bool = False) -> 
         True if successful, False otherwise
     """
     if dry_run:
+        console = Console()
         console.print(f"[yellow][DRY RUN][/] Would create folder: {paths.folder_path}")
         console.print(
             f"[yellow][DRY RUN][/] Would {'move' if move else 'copy'} video to: {paths.video_path}"
@@ -326,6 +337,7 @@ def execute_sort(paths: SortPaths, move: bool = True, dry_run: bool = False) -> 
         return True
 
     except Exception as e:
+        console = Console()
         console.print(f"[red]Error during sorting: {e}[/]")
         return False
 
@@ -335,7 +347,7 @@ def preview_sort(
     dest_folder: Path,
     metadata: MovieMetadata,
     config: Optional[SortConfig] = None,
-) -> dict:
+) -> dict[str, Any]:
     """
     Preview what the sort operation will do.
 

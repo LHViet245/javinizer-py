@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Search Movies</h1>
+
+<div class="search-box">
+    <form action="/search" method="get" style="display: flex; gap: 1rem; flex: 1;">
+        <input type="search" name="q" value="{{ query or '' }}"
+            placeholder="Enter Movie ID (e.g., IPX-486, SIRO-5000)" />
+        <button type="submit">🔍 Search</button>
+    </form>
+</div>
+
+{% if query %}
+<div class="card">
+    <h2>Results for "{{ query }}"</h2>
+
+    {% if results %}
+    <div class="results">
+        {% for result in results %}
+        <div class="result-item">
+            <div class="result-thumb"></div>
+            <div class="result-info">
+                <h3>{{ result.id }} - {{ result.title }}</h3>
+                <div class="result-meta">
+                    {{ result.maker or 'Unknown Studio' }} • {{ result.release_date or 'Unknown Date' }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--text-dim);">
+        No results found. Try a different ID or use the CLI:
+        <code style="background: var(--bg); padding: 0.25rem 0.5rem; border-radius: 0.25rem;">
+            javinizer find {{ query }}
+        </code>
+    </p>
+    {% endif %}
+</div>
+{% else %}
+<div class="card">
+    <h2>Search Tips</h2>
+    <ul style="color: var(--text-dim); line-height: 2;">
+        <li>Enter a full movie ID: <strong>IPX-486</strong>, <strong>SIRO-5000</strong></li>
+        <li>Use the CLI for advanced search: <code>javinizer find IPX-486 --source javbus</code></li>
+        <li>Direct URL scraping: <code>javinizer find --url https://...</code></li>
+    </ul>
+</div>
+{% endif %}
+{% endblock %}

@@ -98,6 +98,67 @@ def extract_movie_id(filename: str) -> Optional[str]:
     return None
 
 
+def extract_movie_id_with_custom(
+    filename: str,
+    custom_patterns: Optional[list[str]] = None,
+    priority: str = "before",
+) -> Optional[str]:
+    """
+    Extract JAV movie ID with support for custom patterns.
+
+    Args:
+        filename: Video filename (with or without extension)
+        custom_patterns: List of custom regex patterns to try
+        priority: "before" to try custom patterns first, "after" for built-in first
+
+    Returns:
+        Extracted movie ID or None if not found
+
+    Examples:
+        >>> extract_movie_id_with_custom("CUSTOM-1234.mp4", [r"(CUSTOM)-(\\d{4})"])
+        'CUSTOM-1234'
+    """
+    # Remove file extension and clean up
+    name = Path(filename).stem
+    name = re.sub(r"\[[^\]]*\]", "", name)
+    name = re.sub(r"\([^)]*\)", "", name)
+    name = name.strip()
+
+    # Try custom patterns first if priority is "before"
+    if priority == "before" and custom_patterns:
+        for pattern in custom_patterns:
+            try:
+                match = re.search(pattern, name, re.IGNORECASE)
+                if match:
+                    # Return full match or combine groups
+                    groups = [g for g in match.groups() if g]
+                    if groups:
+                        return "-".join(g.upper() for g in groups)
+                    return match.group(0).upper()
+            except re.error:
+                continue  # Skip invalid patterns
+
+    # Try built-in extraction
+    result = extract_movie_id(filename)
+    if result:
+        return result
+
+    # Try custom patterns last if priority is "after"
+    if priority == "after" and custom_patterns:
+        for pattern in custom_patterns:
+            try:
+                match = re.search(pattern, name, re.IGNORECASE)
+                if match:
+                    groups = [g for g in match.groups() if g]
+                    if groups:
+                        return "-".join(g.upper() for g in groups)
+                    return match.group(0).upper()
+            except re.error:
+                continue
+
+    return None
+
+
 def normalize_movie_id(movie_id: str) -> str:
     """
     Normalize movie ID to standard format.
