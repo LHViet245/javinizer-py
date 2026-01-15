@@ -17,7 +17,7 @@
 
 Javinizer aims to provide a robust, cross-platform solution for JAV collectors. It focuses on:
 
-* **Accuracy:** Aggregates data from multiple sources (DMM, R18Dev, Javlibrary, JavBus, MGStage) for complete metadata.
+* **Accuracy:** Aggregates data from multiple sources (DMM, R18Dev, Javlibrary, MGStage) for complete metadata.
 * **Automation:** Batch searching, sorting, and updating capabilities.
 * **Organization:** Standardized folder and file naming with NFO generation.
 * **Portability:** Includes features like relative path thumbnail databases.
@@ -256,7 +256,7 @@ javinizer update [THƯ_MỤC_PHIM]
 
 ### Các module chính
 
-* **Scrapers**: Module tải dữ liệu. Hỗ trợ DMM (ảnh chất lượng cao), R18Dev (nhanh), Javlibrary.
+* **Scrapers**: Module tải dữ liệu. Hỗ trợ DMM, MGStage (ảnh chất lượng cao), R18Dev (nhanh), Javlibrary (dữ liệu đầy đủ).
 * **Aggregator**: Gộp dữ liệu từ nhiều nguồn để có thông tin đầy đủ nhất (vd: Tiêu đề từ DMM, mã từ Javlibrary).
 * **Sorter**: Quản lý việc đặt tên file/folder theo mẫu cấu hình (vd: `<ID> - <TITLE>`).
 * **Thumbnail DB**: Quản lý kho ảnh diễn viên cục bộ, giúp hiển thị ảnh diễn viên trong Jellyfin mà không cần tải lại nhiều lần.

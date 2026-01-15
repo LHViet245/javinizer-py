@@ -58,37 +58,66 @@ class MGStageScraper(BaseScraper):
 
     def get_search_url(self, movie_id: str) -> str:
         """Build search URL for movie ID"""
-        # Normalize ID: uppercase, trim
-        normalized_id = movie_id.strip().upper()
-        return f"{self.base_url}/product/product_detail/{normalized_id}/"
+        return f"{self.base_url}/search/cSearch.php?search_word={movie_id.strip()}&sort=new"
 
     def get_movie_url(self, movie_id: str) -> Optional[str]:
-        """Find the direct movie page URL from ID"""
-        url = self.get_search_url(movie_id)
+        """Get movie URL from movie ID"""
+        # 1. Try direct URL first (most common case is exact match or simple prefix)
+        url = f"{self.base_url}/product/product_detail/{movie_id}/"
         try:
-            response = self.client.get(url)
-            if response.status_code == 200:
-                html = response.text
-                # Check if page has valid movie content
-                if self._is_valid_movie_page(html):
-                    return url
-                # Check for redirect or different URL format
-                if "product_detail" in str(response.url):
-                    return str(response.url)
-        except Exception as e:
-            logger.debug(f"[{self.name}] Error checking URL {url}: {e}")
-
-        # Try alternative URL format (some IDs use different patterns)
-        alt_url = f"{self.base_url}/product/product_detail/{movie_id}/"
-        try:
-            response = self.client.get(alt_url)
+            response = self.client.get(url, follow_redirects=True)
             if response.status_code == 200 and self._is_valid_movie_page(response.text):
-                return alt_url
+                return str(response.url)
         except Exception:
             pass
 
+        # 2. Try searching if direct access fails
+        return self._find_movie_url(movie_id)
+
+    def _find_movie_url(self, movie_id: str) -> Optional[str]:
+        """Search for movie ID and return product URL"""
+        search_term = movie_id
+        
+        # Search strategy 1: Exact ID search
+        url = self._search_and_find(search_term, movie_id)
+        if url:
+            return url
+            
+        # Search strategy 2: Numeric part search (robust for prefixed/suffixed IDs)
+        # e.g. START-469 -> search 469, match START
+        match = re.search(r'([A-Z]+)[-_]?(\d+)', movie_id, re.IGNORECASE)
+        if match:
+            alpha = match.group(1)
+            num = match.group(2)
+            url = self._search_and_find(num, alpha)
+            if url:
+                return url
+                
         return None
 
+    def _search_and_find(self, query: str, filter_text: str) -> Optional[str]:
+        """Search not finding the query, but filtering results"""
+        search_url = f"{self.base_url}/search/cSearch.php?search_word={query}&sort=new"
+        try:
+            response = self.client.get(search_url)
+            if response.status_code != 200:
+                return None
+                
+            # Parse results
+            found_ids = list(set(re.findall(r'/product/product_detail/([A-Z0-9-]+)/', response.text)))
+            
+            clean_filter = filter_text.replace("-", "").upper()
+            
+            for fid in found_ids:
+                clean_fid = fid.replace("-", "").upper()
+                # Check if filter is in ID
+                if clean_filter in clean_fid:
+                    return f"{self.base_url}/product/product_detail/{fid}/"
+                    
+        except Exception:
+            pass
+        return None
+        
     def _is_valid_movie_page(self, html: str) -> bool:
         """Check if HTML contains valid movie content"""
         return (
@@ -236,9 +265,11 @@ class MGStageScraper(BaseScraper):
 
     def _extract_maker(self, html: str) -> Optional[str]:
         """Extract studio/maker name"""
+        # Search within the table row for Maker
         match = re.search(
-            r'>(?:メーカー|Maker|Studio)[：:]?\s*</th>\s*<td[^>]*>\s*<a[^>]*>([^<]+)</a>',
+            r'<th>(?:メーカー|Maker|Studio)[：:]?</th>\s*<td>\s*<a[^>]*>([^<]+)</a>',
             html,
+            re.IGNORECASE | re.DOTALL,
         )
         if match:
             return match.group(1).strip()
@@ -247,8 +278,9 @@ class MGStageScraper(BaseScraper):
     def _extract_label(self, html: str) -> Optional[str]:
         """Extract label name"""
         match = re.search(
-            r'>(?:レーベル|Label)[：:]?\s*</th>\s*<td[^>]*>\s*<a[^>]*>([^<]+)</a>',
+            r'<th>(?:レーベル|Label)[：:]?</th>\s*<td>\s*<a[^>]*>([^<]+)</a>',
             html,
+            re.IGNORECASE | re.DOTALL,
         )
         if match:
             return match.group(1).strip()
@@ -257,8 +289,9 @@ class MGStageScraper(BaseScraper):
     def _extract_series(self, html: str) -> Optional[str]:
         """Extract series name"""
         match = re.search(
-            r'>(?:シリーズ|Series)[：:]?\s*</th>\s*<td[^>]*>\s*<a[^>]*>([^<]+)</a>',
+            r'<th>(?:シリーズ|Series)[：:]?</th>\s*<td>\s*<a[^>]*>([^<]+)</a>',
             html,
+            re.IGNORECASE | re.DOTALL,
         )
         if match:
             return match.group(1).strip()
@@ -267,23 +300,39 @@ class MGStageScraper(BaseScraper):
     def _extract_actresses(self, html: str) -> list[Actress]:
         """Extract actress information"""
         actresses = []
+        
+        # Find the row containing actresses
+        # <tr><th>出演：</th><td>...</td></tr>
+        row_match = re.search(
+            r'<th>(?:出演|Actresses|Cast)[：:]?</th>\s*<td>(.*?)</td>',
+            html,
+            re.IGNORECASE | re.DOTALL
+        )
+        
+        if not row_match:
+            return []
 
-        # Pattern: <a href="/actress/...">Name</a>
+        content = row_match.group(1)
+        
+        # Extract links from the cell content
+        # Pattern: <a href="/actress/...">Name</a> or /search/cSearch.php?actor[]=...
         pattern = re.compile(
-            r'<a[^>]*href="[^"]*(?:/actress/|/talent/)[^"]*"[^>]*>([^<]+)</a>',
+            r'<a[^>]*href="[^"]*(?:/actress/|/talent/|actor\[\])[^"]*"[^>]*>([^<]+)</a>',
             re.IGNORECASE,
         )
 
-        for match in pattern.finditer(html):
+        found_names = set()
+        for match in pattern.finditer(content):
             name = match.group(1).strip()
-            if not name or name in ("---", "----"):
+            if not name or name in ("---", "----") or name in found_names:
                 continue
 
+            found_names.add(name)
             actress = Actress(
                 first_name=None,
                 last_name=None,
                 japanese_name=name,
-                thumb_url=None,  # MGStage doesn't always show actress thumbs inline
+                thumb_url=None,
             )
             actresses.append(actress)
 
@@ -293,13 +342,25 @@ class MGStageScraper(BaseScraper):
         """Extract genre tags"""
         genres = []
 
-        # Pattern: <a href="/genre/...">Genre</a>
+        # Find the row containing genres
+        row_match = re.search(
+            r'<th>(?:ジャンル|Genre)[：:]?</th>\s*<td>(.*?)</td>',
+            html,
+            re.IGNORECASE | re.DOTALL
+        )
+        
+        if not row_match:
+            return []
+
+        content = row_match.group(1)
+        
+        # Extract links from the cell content
         pattern = re.compile(
-            r'<a[^>]*href="[^"]*/genre/[^"]*"[^>]*>([^<]+)</a>',
+            r'<a[^>]*href="[^"]*(?:/genre/|genre\[\])[^"]*"[^>]*>([^<]+)</a>',
             re.IGNORECASE,
         )
 
-        for match in pattern.finditer(html):
+        for match in pattern.finditer(content):
             genre = match.group(1).strip()
             if genre and genre not in genres:
                 genres.append(genre)
@@ -308,29 +369,47 @@ class MGStageScraper(BaseScraper):
 
     def _extract_cover(self, html: str) -> Optional[str]:
         """Extract cover image URL"""
-        # Pattern: <a href="large_cover.jpg" class="sample_image">
+        # Pattern: <a ... class="link_magnify" ... href="url" ...>
+        # Handles class before href or href before class via alternation or check
+        
+        # Unified regex for link_magnify (common case)
+        # Matches <a ... href="..." ... class="link_magnify" ...> or <a ... class="link_magnify" ... href="..." ...>
+        match = re.search(
+            r'<a[^>]+(?:class="[^"]*link_magnify[^"]*"[^>]+href="([^"]+)"|href="([^"]+)"[^>]+class="[^"]*link_magnify[^"]*")',
+            html,
+            re.IGNORECASE
+        )
+        if match:
+            # Group 1 is from class...href, Group 2 is from href...class
+            url = match.group(1) or match.group(2)
+            return self._normalize_url(url)
+
+        # Pattern: <a href="large_cover.jpg" class="sample_image"> (Old)
         match = re.search(
             r'<a[^>]*href="([^"]+)"[^>]*class="[^"]*sample_image[^"]*"',
             html,
+            re.IGNORECASE
         )
         if match:
-            cover_url = match.group(1)
-            if not cover_url.startswith("http"):
-                cover_url = urljoin(self.base_url, cover_url)
-            return cover_url
+            return self._normalize_url(match.group(1))
 
-        # Alternative: main image
+        # Alternative: main image (enlarge_image or detail_img)
         match = re.search(
-            r'<img[^>]*class="[^"]*detail_img[^"]*"[^>]*src="([^"]+)"',
+            r'<img[^>]*class="[^"]*(?:detail_img|enlarge_image)[^"]*"[^>]*src="([^"]+)"',
             html,
+            re.IGNORECASE
         )
         if match:
-            cover_url = match.group(1)
-            if not cover_url.startswith("http"):
-                cover_url = urljoin(self.base_url, cover_url)
-            return cover_url
+             # This is usually a smaller image or package shot, but better than nothing
+            return self._normalize_url(match.group(1))
 
         return None
+
+    def _normalize_url(self, url: str) -> str:
+        """Helper to qualify relative URLs"""
+        if not url.startswith("http"):
+            return urljoin(self.base_url, url)
+        return url
 
     def _extract_screenshots(self, html: str) -> list[str]:
         """Extract screenshot/sample image URLs"""
@@ -373,14 +452,4 @@ class MGStageScraper(BaseScraper):
 
 
 # Example usage
-if __name__ == "__main__":
-    # Note: Requires Japan proxy to access
-    # proxy = ProxyConfig(enabled=True, url="socks5://japan-proxy:1080")
-    # with MGStageScraper(proxy=proxy) as scraper:
-    
-    # For testing without proxy (will fail outside Japan)
-    with MGStageScraper() as scraper:
-        print("MGStage Scraper initialized")
-        print(f"Base URL: {scraper.base_url}")
-        print("Note: Requires Japan proxy to access")
-        # metadata = scraper.find("SIRO-5000")
+

@@ -47,8 +47,8 @@ playwright install chromium
 ## Tính năng chính
 
 | Tính năng | Trạng thái | Mô tả |
-|-----------|------------|-------|
-| **Scrapers** | ✅ | DMM, DMM New, R18Dev, Javlibrary |
+| :--- | :---: | :--- |
+| **Scrapers** | ✅ | DMM, DMM New, R18Dev, Javlibrary, MGStage |
 | **File Sorting** | ✅ | Sắp xếp video vào folder với metadata |
 | **Update System** | ✅ | Cập nhật metadata cho folder đã sort |
 | **Thumbnail DB** | ✅ | Lưu ảnh diễn viên cục bộ |
@@ -248,7 +248,7 @@ Javinizer hỗ trợ dịch tiêu đề và mô tả từ tiếng Nhật sang ng
 ### Các ngôn ngữ đích
 
 | Mã | Ngôn ngữ |
-|----|----------|
+| :---: | :--- |
 | `en` | Tiếng Anh |
 | `vi` | Tiếng Việt |
 | `zh` | Tiếng Trung |
@@ -308,7 +308,7 @@ javinizer-py/
 ## Format Templates
 
 | Placeholder | Giá trị | Ví dụ |
-|-------------|---------|-------|
+| :--- | :--- | :--- |
 | `<ID>` | Movie ID | IPX-486 |
 | `<TITLE>` | Tiêu đề | Beautiful Girl... |
 | `<STUDIO>` | Studio | Idea Pocket |

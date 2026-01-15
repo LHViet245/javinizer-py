@@ -35,13 +35,13 @@
 | **Javlibrary** | ✅ | ✅ | Database lớn nhất |
 | **R18.dev** | ✅ (R18Dev) | ✅ | Fast JSON API |
 | **DMM (Fanza)** | ✅ | ✅ (2 versions) | dmm + dmm_new |
-| **JavBus** | ✅ | ❌ **THIẾU** | Popular database |
+| **MGStage** | ✅ | ✅ | Publisher specific |
+| **JavBus** | ✅ | ❌ **ĐÃ LOẠI BỎ** | Blocked (Region/Age check) |
 | **Jav321** | ✅ | ❌ **THIẾU** | CN/JP support |
 | **AVEntertainment** | ✅ | ❌ **THIẾU** | JP database |
-| **MGStage** | ✅ | ❌ **THIẾU** | Publisher specific |
 | **DLGetchu** | ✅ | ❌ **THIẾU** | Digital content |
 
-**Kết luận**: Javinizer-py thiếu **4 scrapers** (JavBus, Jav321, AVEntertainment, MGStage, DLGetchu).
+**Kết luận**: Javinizer-py thiếu/loại bỏ **4 scrapers** (JavBus, Jav321, AVEntertainment, DLGetchu).
 
 ### 1.2 Chất lượng Scrapers
 
@@ -52,11 +52,10 @@
 - ✅ **Better error handling**: Retry logic, timeout management
 - ✅ **Cloudflare bypass**: curl_cffi cho Javlibrary
 
-#### Javinizer-py thiếu
+#### Javinizer-py thiếu/loại bỏ
 
-- ❌ **JavBus**: Scraper phổ biến, nhiều metadata
+- ❌ **JavBus**: Đã loại bỏ do chặn IP/Region và chặn bot quá gắt.
 - ❌ **Jav321**: Hỗ trợ Chinese metadata
-- ❌ **MGStage**: Cho các phim từ MGS studio
 - ❌ **DLGetchu**: Cho digital content
 
 ---
@@ -81,7 +80,7 @@
 |-----------|-------------------|---------------|----------|
 | **Built-in matcher** | ✅ | ✅ | Regex-based ID extraction |
 | **Custom regex** | ✅ | ❓ **UNCLEAR** | Cần kiểm tra |
-| **Direct URL** | ✅ | ❌ **THIẾU** | Chưa hỗ trợ scrape bằng URL |
+| **Direct URL** | ✅ | ✅ | Scrape bằng tham số `--url` |
 | **Recursive scan** | ✅ | ✅ | --recursive flag |
 | **Min file size** | ✅ | ✅ | Default 100MB |
 | **File extensions** | ✅ | ✅ | .mp4, .avi, .mkv, .wmv |
@@ -172,10 +171,10 @@ Javinizer-py hiện tại chỉ hỗ trợ:
 | File CSV | Javinizer Original | Javinizer-py | Đánh giá |
 |----------|-------------------|---------------|----------|
 | **actresses.csv** | ✅ | ✅ | Tương đương |
-| **genres.csv** | ✅ | ❌ **THIẾU** | Translate genres |
-| **studios.csv** | ✅ | ❌ **THIẾU** | Translate studios |
+| **genres.csv** | ✅ | ✅ | Đã hỗ trợ |
+| **studios.csv** | ✅ | ✅ | Đã hỗ trợ |
 
-**Kết luận**: Javinizer-py thiếu **genres.csv** và **studios.csv** cho translation override.
+**Kết luận**: Javinizer-py đã hỗ trợ đầy đủ **genres.csv** và **studios.csv**.
 
 ---
 
@@ -207,7 +206,7 @@ Javinizer-py hiện tại chỉ hỗ trợ:
 | **Batch update** | ❓ | ✅ `update-dir` | **PY TỐT HƠN** |
 | **Thumbs management** | ❓ | ✅ `thumbs` | **PY TỐT HƠN** |
 | **Config management** | ✅ `-OpenSettings` | ✅ `config` | **PY TỐT HƠN** |
-| **Direct URL scrape** | ✅ `-Url` | ❌ **THIẾU** | Thiếu tính năng |
+| **Direct URL scrape** | ✅ `-Url` | ✅ `find --url` | Tương đương |
 
 ### 8.2 GUI
 
@@ -283,7 +282,7 @@ Javinizer-py hiện tại chỉ hỗ trợ:
 ### 🔴 Critical (Ảnh hưởng lớn)
 
 1. **Thiếu 4 scrapers**
-   - JavBus, Jav321, AVEntertainment, MGStage
+   - JavBus, Jav321, AVEntertainment, DLGetchu
    - **Impact**: Giảm coverage metadata, đặc biệt cho phim niche
 
 2. **Không có GUI**
@@ -300,20 +299,18 @@ Javinizer-py hiện tại chỉ hỗ trợ:
 
 ### 🟡 Medium (Ảnh hưởng trung bình)
 
-1. **Thiếu CSV settings**
-   - Không có `genres.csv`, `studios.csv`
-   - **Impact**: Không override được genre/studio translation
+303: [Resolved] **Thiếu CSV settings**
+304:    - Đã support `genres.csv`, `studios.csv`
 
-2. **Thiếu media assets**
+1. **Thiếu media assets**
    - Không download trailer
    - Không download extrafanart
    - **Impact**: Media server không có đầy đủ assets
 
-3. **Thiếu Direct URL scraping**
-   - Không thể scrape bằng URL trực tiếp
-   - **Impact**: Không flexible khi ID không match
+312: [Resolved] **Thiếu Direct URL scraping**
+313:    - Đã support `--url`
 
-4. **Chưa phát hành package**
+1. **Chưa phát hành package**
    - Chưa lên PyPI, chưa có wheel
    - **Impact**: Khó cài đặt cho người dùng thông thường
 
@@ -372,8 +369,10 @@ Javinizer-py hiện tại chỉ hỗ trợ:
 ### Phase 1: Critical Features (P0)
 
 - [ ] **Implement missing scrapers**
-  - [ ] JavBus scraper
   - [ ] Jav321 scraper (Chinese support)
+  - [ ] AVEntertainment scraper
+  - [ ] MGStage scraper
+  - [ ] *Self-hosted/Alternative JavBus* (Consider later if proxy situation improves)
   - [ ] AVEntertainment scraper
   - [ ] MGStage scraper
 
@@ -435,10 +434,11 @@ Javinizer-py hiện tại chỉ hỗ trợ:
 - ✅ Codebase sạch hơn (Python, type hints)
 - ✅ CLI tốt hơn (dedicated commands)
 - ✅ Thumbnail DB tốt hơn
+- ✅ Hỗ trợ MGStage scraper
 
 Tuy nhiên vẫn còn **thiếu nhiều tính năng** quan trọng:
 
-- ❌ 50% scrapers (4/8)
+- ❌ 4 scrapers (JavBus removed, others missing)
 - ❌ Không có GUI
 - ❌ Không có Docker
 - ❌ Advanced sorting hạn chế

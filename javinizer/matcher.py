@@ -100,7 +100,7 @@ def extract_movie_id(filename: str) -> Optional[str]:
 
 def extract_movie_id_with_custom(
     filename: str,
-    custom_patterns: list[str] = None,
+    custom_patterns: Optional[list[str]] = None,
     priority: str = "before",
 ) -> Optional[str]:
     """

@@ -4,7 +4,7 @@ import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 
 from rich.console import Console
 
@@ -347,7 +347,7 @@ def preview_sort(
     dest_folder: Path,
     metadata: MovieMetadata,
     config: Optional[SortConfig] = None,
-) -> dict:
+) -> dict[str, Any]:
     """
     Preview what the sort operation will do.
 

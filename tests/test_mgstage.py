@@ -49,11 +49,12 @@ class TestMGStageScraper:
         scraper = MGStageScraper()
         
         url = scraper.get_search_url("SIRO-5000")
-        assert url == "https://www.mgstage.com/product/product_detail/SIRO-5000/"
+        assert "cSearch.php" in url
+        assert "search_word=SIRO-5000" in url
         
-        # Test normalization
-        url = scraper.get_search_url("siro-5000")
-        assert url == "https://www.mgstage.com/product/product_detail/SIRO-5000/"
+        # Test normalization (trimming only, case might vary but search_word usually kept)
+        url = scraper.get_search_url(" siro-5000 ")
+        assert "siro-5000" in url or "SIRO-5000" in url
 
     def test_extract_id_from_url(self):
         """Test ID extraction from URL"""
@@ -99,8 +100,11 @@ class TestMGStageScraper:
         scraper = MGStageScraper()
         
         html = '''
-        <a href="/genre/1">素人</a>
-        <a href="/genre/2">美少女</a>
+        <th>ジャンル：</th>
+        <td>
+            <a href="/genre/1">素人</a>
+            <a href="/genre/2">美少女</a>
+        </td>
         '''
         genres = scraper._extract_genres(html)
         assert "素人" in genres
@@ -131,11 +135,11 @@ class TestMGStageScraper:
         html = '''
         <div class="common_detail_cover">
             <h1 class="tag">テスト動画</h1>
-            >品番：</th><td class="data">SIRO-5000</td>
-            >配信開始日：</th><td class="data">2024/01/15</td>
-            >収録時間：</th><td class="data">90分</td>
-            >メーカー：</th><td><a href="#">テストメーカー</a></td>
-            <a href="/genre/1">素人</a>
+            <th>品番：</th><td class="data">SIRO-5000</td>
+            <th>配信開始日：</th><td class="data">2024/01/15</td>
+            <th>収録時間：</th><td class="data">90分</td>
+            <th>メーカー：</th><td><a href="#">テストメーカー</a></td>
+            <th>ジャンル：</th><td><a href="/genre/1">素人</a></td>
             <a href="https://example.com/cover.jpg" class="sample_image">
         </div>
         '''

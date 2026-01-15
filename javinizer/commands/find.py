@@ -21,7 +21,6 @@ URL_PATTERNS = {
     "r18dev": [r"r18\.dev", r"r18dev"],
     "dmm": [r"dmm\.co\.jp", r"fanza\.com"],
     "javlibrary": [r"javlibrary\.com"],
-    "javbus": [r"javbus\.com"],
     "mgstage": [r"mgstage\.com"],
 }
 
@@ -248,7 +247,6 @@ def _get_scraper_for_url(
         R18DevScraper,
         DMMScraper,
         JavlibraryScraper,
-        JavBusScraper,
         MGStageScraper,
     )
 
@@ -256,7 +254,6 @@ def _get_scraper_for_url(
         "r18dev": R18DevScraper,
         "dmm": DMMScraper,
         "javlibrary": JavlibraryScraper,
-        "javbus": JavBusScraper,
         "mgstage": MGStageScraper,
     }
 
