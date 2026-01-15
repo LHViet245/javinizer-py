@@ -17,10 +17,11 @@
 
 Javinizer aims to provide a robust, cross-platform solution for JAV collectors. It focuses on:
 
-* **Accuracy:** Aggregates data from multiple sources (DMM, R18Dev, Javlibrary) for complete metadata.
+* **Accuracy:** Aggregates data from multiple sources (DMM, R18Dev, Javlibrary, JavBus, MGStage) for complete metadata.
 * **Automation:** Batch searching, sorting, and updating capabilities.
 * **Organization:** Standardized folder and file naming with NFO generation.
 * **Portability:** Includes features like relative path thumbnail databases.
+* **Web GUI:** Optional FastAPI-based web interface for easy management.
 
 ### Installation
 
@@ -144,6 +145,20 @@ javinizer config [COMMAND]
 * `set-sort-format`: Set folder/file/NFO naming templates.
 * `set-javlibrary-cookies`: Manually set Cloudflare cookies.
 * `get-javlibrary-cookies`: Automatically capture Cloudflare cookies using a browser (requires `undetected-chromedriver`).
+
+#### 8. Web GUI (`gui`)
+
+Start The FastAPI-based web interface.
+
+```bash
+javinizer gui [FLAGS]
+```
+
+* `--host, -h`: Host to bind (default: 127.0.0.1).
+* `--port, -p`: Port to bind (default: 8000).
+* `--reload`: Enable auto-reload for development.
+
+**Note:** Requires GUI dependencies: `pip install javinizer[gui]`
 
 ### Core Modules
 
