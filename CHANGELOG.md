@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [2026-01-15]
+## [0.2.0-beta.1] - 2026-01-15
 
 ### Added
 
@@ -46,19 +46,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - JavBus and MGStage missing from SCRAPERS dict in `cli_common.py`
 - Test mocking for JavBus curl_cffi client
+- **Code Quality & Stability:**
+  - Refactored `SortConfig` to use immutable default factories (fixed lint warnings).
+  - Removed global `console` instance to prevent side-effects in library usage.
+  - Improved filename sanitization (now handles colons `:`).
+  - Cleaned up unused imports in tests.
 
 ### Changed
 
 - JavBus scraper uses curl_cffi with Chrome impersonation (bypasses SOCKS limitation)
 - Enhanced RateLimitSettings with burst control
-
-## [2026-01-14]
-
-### Added
-
-- Phase 2A features: JavBus, MGStage, Advanced Sorting, Direct URL
-- Phase 2B features: CSV Settings, GUI Dashboard
-- Phase 2C features: Custom patterns, Advanced rate limiting
 
 ---
 

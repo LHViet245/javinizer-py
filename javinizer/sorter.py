@@ -6,13 +6,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from .models import MovieMetadata
-from .matcher import find_subtitle_files, get_subtitle_language
-
 from rich.console import Console
 
-console = Console()
-
+from .matcher import find_subtitle_files, get_subtitle_language
+from .models import MovieMetadata
 
 # Invalid characters for Windows filenames
 INVALID_FILENAME_CHARS = r'\/:*?"<>|'
@@ -29,12 +26,7 @@ class SortConfig:
 
     # Multi-level output folder (e.g., ["<ACTORS>", "<YEAR>"])
     # Creates nested structure: dest/<ACTORS>/<YEAR>/<folder_format>/
-    output_folder: list[str] = None  # type: ignore[assignment]
-
-    def __post_init__(self):
-        """Initialize default values for mutable fields"""
-        if self.output_folder is None:
-            self.output_folder = []
+    output_folder: list[str] = field(default_factory=list)
 
     # Image filenames (Jellyfin standard)
     poster_filename: str = "cover.jpg"
@@ -83,7 +75,7 @@ def sanitize_filename(name: str) -> str:
     """
     # Replace invalid characters
     for char in INVALID_FILENAME_CHARS:
-        if char == "/":
+        if char == "/" or char == ":":
             name = name.replace(char, "-")
         else:
             name = name.replace(char, "")
@@ -302,6 +294,7 @@ def execute_sort(paths: SortPaths, move: bool = True, dry_run: bool = False) -> 
         True if successful, False otherwise
     """
     if dry_run:
+        console = Console()
         console.print(f"[yellow][DRY RUN][/] Would create folder: {paths.folder_path}")
         console.print(
             f"[yellow][DRY RUN][/] Would {'move' if move else 'copy'} video to: {paths.video_path}"
@@ -344,6 +337,7 @@ def execute_sort(paths: SortPaths, move: bool = True, dry_run: bool = False) -> 
         return True
 
     except Exception as e:
+        console = Console()
         console.print(f"[red]Error during sorting: {e}[/]")
         return False
 

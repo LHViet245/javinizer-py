@@ -1,9 +1,5 @@
 """Tests for csv_utils module"""
 
-import pytest
-from pathlib import Path
-import tempfile
-import os
 
 from javinizer.csv_utils import (
     CSVMapper,
