@@ -71,3 +71,6 @@ Thumbs.db
 
 # Secrets
 .env
+
+# AI Context Memory (local session state)
+.brain/

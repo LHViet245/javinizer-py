@@ -1,7 +1,7 @@
 """Base scraper abstract class"""
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Any, Optional
 import ssl
 
 import httpx
@@ -87,7 +87,7 @@ class BaseScraper(ABC):
         self.user_agent = user_agent or DEFAULT_USER_AGENT
         self.verify_ssl = verify_ssl
         self.rate_limiter = rate_limiter
-        self._client: Optional[httpx.Client] = None
+        self._client: Any = None  # httpx.Client or curl_cffi.Session
 
     def _get_proxy_url(self) -> Optional[str]:
         """Get proxy URL if configured"""
@@ -96,7 +96,7 @@ class BaseScraper(ABC):
         return None
 
     @property
-    def client(self):
+    def client(self) -> Any:
         """Lazy-initialized HTTP client"""
         if self._client is None:
             proxy_url = self._get_proxy_url()
@@ -167,7 +167,7 @@ class BaseScraper(ABC):
     def __enter__(self) -> "BaseScraper":
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()
 
     @abstractmethod

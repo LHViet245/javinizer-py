@@ -1,7 +1,7 @@
 """R18Dev JSON API scraper for metadata"""
 
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime
+from typing import Any, Optional
 
 import httpx
 
@@ -40,7 +40,7 @@ class R18DevScraper(BaseScraper):
         )
 
     @property
-    def client(self) -> httpx.Client:
+    def client(self) -> Any:
         """Override client to use minimal headers - R18.dev API blocks certain headers"""
         if self._client is None:
             proxy_url = self._get_proxy_url()
@@ -146,7 +146,7 @@ class R18DevScraper(BaseScraper):
 
         return metadata
 
-    def _get_title(self, data: dict) -> str:
+    def _get_title(self, data: dict[str, Any]) -> str:
         """Get best available title"""
         return (
             data.get("title_en")
@@ -155,7 +155,7 @@ class R18DevScraper(BaseScraper):
             or "Unknown"
         )
 
-    def _parse_date(self, date_str: Optional[str]) -> Optional[datetime]:
+    def _parse_date(self, date_str: Optional[str]) -> Optional[date]:
         """Parse release date string"""
         if not date_str:
             return None
@@ -166,14 +166,14 @@ class R18DevScraper(BaseScraper):
         except (ValueError, AttributeError):
             return None
 
-    def _get_director(self, data: dict) -> Optional[str]:
+    def _get_director(self, data: dict[str, Any]) -> Optional[str]:
         """Get director name"""
         directors = data.get("directors", [])
         if directors and len(directors) > 0:
             return directors[0].get("name_romaji") or directors[0].get("name_kanji")
         return None
 
-    def _parse_actresses(self, data: dict) -> list[Actress]:
+    def _parse_actresses(self, data: dict[str, Any]) -> list[Actress]:
         """Parse actress information from JSON"""
         actresses = []
 
@@ -198,7 +198,7 @@ class R18DevScraper(BaseScraper):
 
         return actresses
 
-    def _parse_genres(self, data: dict) -> list[str]:
+    def _parse_genres(self, data: dict[str, Any]) -> list[str]:
         """Parse genre list from categories"""
         genres = []
         for category in data.get("categories", []):
@@ -207,7 +207,7 @@ class R18DevScraper(BaseScraper):
                 genres.append(name)
         return genres
 
-    def _get_cover_url(self, data: dict) -> Optional[str]:
+    def _get_cover_url(self, data: dict[str, Any]) -> Optional[str]:
         """Get cover image URL, prioritizing high-quality awsimgsrc.dmm.co.jp domain"""
         cover = data.get("jacket_full_url")
         if cover:
@@ -224,7 +224,7 @@ class R18DevScraper(BaseScraper):
             return cover
         return None
 
-    def _parse_screenshot_urls(self, data: dict) -> list[str]:
+    def _parse_screenshot_urls(self, data: dict[str, Any]) -> list[str]:
         """Parse screenshot URLs from gallery"""
         gallery = data.get("gallery")
         if not gallery:

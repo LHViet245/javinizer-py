@@ -1,8 +1,8 @@
 """Javlibrary scraper for metadata"""
 
 import re
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime
+from typing import Any, Optional
 from urllib.parse import urljoin
 
 import click
@@ -56,7 +56,7 @@ class JavlibraryScraper(BaseScraper):
         movie_id = movie_id.upper().strip()
         return f"{self.base_url}/{self.language}/vl_searchbyid.php?keyword={movie_id}"
 
-    def _check_cloudflare(self, response) -> bool:
+    def _check_cloudflare(self, response: Any) -> bool:
         """Check if response is a Cloudflare challenge"""
         if response.status_code == 403:
             headers = dict(response.headers)
@@ -67,7 +67,7 @@ class JavlibraryScraper(BaseScraper):
                 return True
         return False
 
-    def _print_cf_help(self):
+    def _print_cf_help(self) -> None:
         """Print helpful message for Cloudflare issues"""
         cmd = "javinizer config get-javlibrary-cookies"
         proxy_url = self._get_proxy_url()
@@ -199,7 +199,7 @@ class JavlibraryScraper(BaseScraper):
             return title.strip()
         return "Unknown"
 
-    def _parse_release_date(self, soup: BeautifulSoup) -> Optional[datetime]:
+    def _parse_release_date(self, soup: BeautifulSoup) -> Optional[date]:
         """Parse release date"""
         date_div = soup.select_one("#video_date .text")
         if date_div:
