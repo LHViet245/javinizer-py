@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from javinizer.scrapers.base import BaseScraper
@@ -278,13 +278,13 @@ def _get_scraper_for_url(
             cookies=settings.javlibrary_cookies or None,
             user_agent=settings.javlibrary_user_agent or None,
         )
-        return scraper  # type: ignore[return-value]
+        return cast("BaseScraper", scraper)
 
     scraper = scraper_class(
         timeout=settings.timeout,
         proxy=proxy_config if proxy_config.enabled else None,
     )
-    return scraper  # type: ignore[return-value]
+    return cast("BaseScraper", scraper)
 
 
 def _scrape_from_urls(

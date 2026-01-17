@@ -118,23 +118,28 @@ def scrape_parallel(
         )
 
         if scraper is None:
-            console.print(f"[yellow]⚠️  Unknown source: {src}[/]")
+            if console:
+                console.print(f"[yellow]⚠️  Unknown source: {src}[/]")
             return src, None
 
         with scraper:
             try:
                 # Use print() or logging but careful with console.print concurrency
                 # We'll just capture output or let rich handle basic thread safety
-                console.print(f"[dim]Scraping from {src}...[/]", end=" ")
+                if console:
+                    console.print(f"[dim]Scraping from {src}...[/]", end=" ")
                 metadata = scraper.find(movie_id)
                 if metadata:
-                    console.print(f"[green]✓ ({src})[/]")
+                    if console:
+                        console.print(f"[green]✓ ({src})[/]")
                     return src, metadata
                 else:
-                    console.print(f"[yellow]no results ({src})[/]")
+                    if console:
+                        console.print(f"[yellow]no results ({src})[/]")
                     return src, None
             except Exception as e:
-                console.print(f"[red]error ({src}): {e}[/]")
+                if console:
+                    console.print(f"[red]error ({src}): {e}[/]")
                 return src, None
 
     # Use ThreadPoolExecutor for I/O bound tasks
@@ -181,6 +186,7 @@ def scrape_parallel(
                     if metadata:
                         results[result_src] = metadata
             except Exception as e:
-                console.print(f"[red]Exception in thread for {task_name}: {e}[/]")
+                if console:
+                    console.print(f"[red]Exception in thread for {task_name}: {e}[/]")
 
     return results

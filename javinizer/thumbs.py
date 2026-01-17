@@ -270,10 +270,10 @@ class ActressDB:
                     alias=actress.full_name if actress.japanese_name else None,
                 )
             else:
-                profile = self.find(actress.japanese_name or actress.full_name)
-
-            if profile is None:
-                continue
+                found = self.find(actress.japanese_name or actress.full_name)
+                if found is None:
+                    continue
+                profile = found
 
             # 2. Download to local cache (but don't modify metadata)
             # This keeps a local backup without affecting NFO portability

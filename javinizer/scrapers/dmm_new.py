@@ -48,8 +48,8 @@ class DMMNewScraper:
         self.timeout = timeout
         self.proxy = proxy
         self.headless = headless
-        self._browser = None
-        self._playwright = None
+        self._browser: Optional[Any] = None
+        self._playwright: Optional[Any] = None
 
     def __enter__(self) -> "DMMNewScraper":
         return self
@@ -83,7 +83,7 @@ class DMMNewScraper:
             self._playwright = sync_playwright().start()
 
             # Setup proxy if configured
-            proxy_config = None
+            proxy_config: Any = None
             if self.proxy and self.proxy.enabled and self.proxy.url:
                 proxy_config = {"server": self.proxy.url}
 
