@@ -2,7 +2,12 @@
 
 import json
 import re
-from typing import Optional
+from typing import Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from javinizer.scrapers.base import BaseScraper
+    from javinizer.models import Settings
+    from rich.console import Console as RichConsole
 
 import click
 from rich.table import Table
@@ -64,7 +69,7 @@ def find(
     no_aggregate: bool,
     log_file: Optional[str],
     verbose: bool,
-):
+) -> None:
     """Find metadata for a movie ID or direct URL(s)
 
     By default, searches all sources (r18dev, javlibrary, dmm) and aggregates results.
@@ -126,6 +131,10 @@ def find(
         # Scrape from all sources
         from javinizer.cli_common import scrape_parallel
 
+        if movie_id is None:
+            console.print("[red]Error: Movie ID is required[/]")
+            return
+
         results = scrape_parallel(movie_id, sources, proxy_config, settings, console)
 
         if not results:
@@ -155,7 +164,7 @@ def find(
         _output_table(metadata)
 
 
-def _output_table(metadata: MovieMetadata):
+def _output_table(metadata: MovieMetadata) -> None:
     """Pretty print metadata as table"""
     table = Table(title=f"📀 {metadata.display_name}", show_header=False, box=None)
     table.add_column("Field", style="cyan", width=15)
@@ -214,7 +223,7 @@ def _output_table(metadata: MovieMetadata):
         console.print(Panel(desc_preview, title="Description", border_style="dim"))
 
 
-def _output_nfo(metadata: MovieMetadata):
+def _output_nfo(metadata: MovieMetadata) -> None:
     """Output NFO XML"""
     nfo_content = generate_nfo(metadata)
 
@@ -223,7 +232,7 @@ def _output_nfo(metadata: MovieMetadata):
     console.print(syntax)
 
 
-def _output_json(metadata: MovieMetadata):
+def _output_json(metadata: MovieMetadata) -> None:
     """Output as JSON"""
     # Convert to dict, handling date serialization
     data = metadata.model_dump(mode="json")
@@ -240,8 +249,8 @@ def _detect_scraper_from_url(url: str) -> Optional[str]:
 
 
 def _get_scraper_for_url(
-    scraper_name: str, proxy_config: ProxyConfig, settings
-) -> Optional[object]:
+    scraper_name: str, proxy_config: ProxyConfig, settings: "Settings"
+) -> Optional["BaseScraper"]:
     """Get the scraper instance for a given scraper name"""
     from javinizer.scrapers import (
         R18DevScraper,
@@ -263,24 +272,26 @@ def _get_scraper_for_url(
 
     # Special handling for javlibrary (needs cookies)
     if scraper_name == "javlibrary":
-        return scraper_class(
+        scraper = scraper_class(
             timeout=settings.timeout,
             proxy=proxy_config if proxy_config.enabled else None,
             cookies=settings.javlibrary_cookies or None,
             user_agent=settings.javlibrary_user_agent or None,
         )
+        return scraper  # type: ignore[return-value]
 
-    return scraper_class(
+    scraper = scraper_class(
         timeout=settings.timeout,
         proxy=proxy_config if proxy_config.enabled else None,
     )
+    return scraper  # type: ignore[return-value]
 
 
 def _scrape_from_urls(
     urls: tuple[str, ...],
     proxy_config: ProxyConfig,
-    settings,
-    console,
+    settings: "Settings",
+    console: "RichConsole",
 ) -> dict[str, MovieMetadata]:
     """Scrape metadata from direct URLs"""
     results: dict[str, MovieMetadata] = {}

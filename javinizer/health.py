@@ -3,7 +3,7 @@
 
 import time
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from javinizer.logger import get_logger
@@ -19,7 +19,7 @@ class HealthCheckResult:
     status: str  # "ok", "error", "timeout"
     latency_ms: float = 0.0
     message: Optional[str] = None
-    details: dict = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
     @property
     def is_healthy(self) -> bool:
@@ -27,7 +27,7 @@ class HealthCheckResult:
 
 
 def check_scraper_health(
-    scraper_class,
+    scraper_class: Any,
     test_id: str = "IPX-001",
     timeout: float = 10.0,
 ) -> HealthCheckResult:
@@ -166,7 +166,7 @@ def check_cache_health() -> HealthCheckResult:
         return HealthCheckResult(name="cache", status="error", message=str(e))
 
 
-def get_system_status() -> dict:
+def get_system_status() -> dict[str, Any]:
     """Get overall system status.
 
     Returns:

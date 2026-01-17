@@ -13,7 +13,7 @@ console = Console()
 
 @click.command()
 @click.option("--json", "output_json", is_flag=True, help="Output as JSON")
-def status(output_json: bool):
+def status(output_json: bool) -> None:
     """Check status of scrapers and system components.
 
     Shows health status of all configured scrapers and the cache system.

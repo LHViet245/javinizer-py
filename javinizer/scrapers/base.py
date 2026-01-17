@@ -139,22 +139,28 @@ class BaseScraper(ABC):
                 # Fallback to httpx (better SOCKS support)
                 import httpx
 
-                client_kwargs = {
-                    "timeout": self.timeout,
-                    "headers": {"User-Agent": self.user_agent},
-                    "follow_redirects": True,
-                    "cookies": self.cookies,
-                }
-                if proxy_url:
-                    client_kwargs["proxy"] = proxy_url
-                    client_kwargs["verify"] = self.verify_ssl
-                else:
-                    # Use legacy context only if SSL verification is disabled
-                    client_kwargs["verify"] = (
-                        True if self.verify_ssl else get_legacy_ssl_context()
-                    )
+                headers = {"User-Agent": self.user_agent}
+                verify_ctx: ssl.SSLContext | bool = (
+                    True if self.verify_ssl else get_legacy_ssl_context()
+                )
 
-                self._client = httpx.Client(**client_kwargs)
+                if proxy_url:
+                    self._client = httpx.Client(
+                        timeout=self.timeout,
+                        headers=headers,
+                        follow_redirects=True,
+                        cookies=self.cookies,
+                        proxy=proxy_url,
+                        verify=self.verify_ssl,
+                    )
+                else:
+                    self._client = httpx.Client(
+                        timeout=self.timeout,
+                        headers=headers,
+                        follow_redirects=True,
+                        cookies=self.cookies,
+                        verify=verify_ctx,
+                    )
 
         return self._client
 

@@ -9,7 +9,7 @@ from javinizer.scrapers import is_playwright_available
 
 
 @click.command()
-def info():
+def info() -> None:
     """Show Javinizer information"""
     console.print(
         Panel.fit(

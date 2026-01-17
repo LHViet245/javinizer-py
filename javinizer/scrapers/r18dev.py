@@ -46,15 +46,17 @@ class R18DevScraper(BaseScraper):
             proxy_url = self._get_proxy_url()
 
             # R18.dev API requires minimal headers - blocks requests with Accept/Accept-Language
-            client_kwargs = {
-                "timeout": self.timeout,
-                "follow_redirects": True,
-            }
-
             if proxy_url:
-                client_kwargs["proxy"] = proxy_url
-
-            self._client = httpx.Client(**client_kwargs)
+                self._client = httpx.Client(
+                    timeout=self.timeout,
+                    follow_redirects=True,
+                    proxy=proxy_url,
+                )
+            else:
+                self._client = httpx.Client(
+                    timeout=self.timeout,
+                    follow_redirects=True,
+                )
 
         return self._client
 
@@ -170,7 +172,7 @@ class R18DevScraper(BaseScraper):
         """Get director name"""
         directors = data.get("directors", [])
         if directors and len(directors) > 0:
-            return directors[0].get("name_romaji") or directors[0].get("name_kanji")
+            return str(directors[0].get("name_romaji") or directors[0].get("name_kanji"))
         return None
 
     def _parse_actresses(self, data: dict[str, Any]) -> list[Actress]:
@@ -221,7 +223,7 @@ class R18DevScraper(BaseScraper):
             if "pics.dmm.co.jp" in cover and "/digital/" in cover:
                 cover = cover.replace("pics.dmm.co.jp", "awsimgsrc.dmm.co.jp/pics_dig")
 
-            return cover
+            return str(cover)
         return None
 
     def _parse_screenshot_urls(self, data: dict[str, Any]) -> list[str]:

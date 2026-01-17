@@ -1,7 +1,10 @@
 """Translation module for Japanese to other languages"""
 
 import re
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from javinizer.models import MovieMetadata
 import httpx
 from rich.console import Console
 
@@ -110,7 +113,7 @@ class Translator:
                 )
                 response.raise_for_status()
                 data = response.json()
-                return data["translations"][0]["text"]
+                return str(data["translations"][0]["text"])
         except httpx.HTTPStatusError as e:
             raise RuntimeError(f"DeepL API error: {e.response.status_code}")
         except Exception as e:
@@ -118,11 +121,11 @@ class Translator:
 
 
 def translate_metadata(
-    metadata,
+    metadata: "MovieMetadata",
     translator: Translator,
     translate_title: bool = True,
     translate_description: bool = True,
-):
+) -> None:
     """
     Translate metadata fields in-place.
 

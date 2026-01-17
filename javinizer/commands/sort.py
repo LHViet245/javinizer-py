@@ -37,7 +37,7 @@ def sort(
     proxy: Optional[str],
     dry_run: bool,
     copy: bool,
-):
+) -> None:
     """Sort a single video file with metadata.
 
     This command will:
@@ -92,15 +92,18 @@ def sort(
         console.print(f"[red]Could not find metadata for {movie_id}[/]")
         return
 
-    # Aggregate results if multiple sources found
-    if len(results) > 1:
+    # Use first available result if only one source
+    if len(results) == 1:
+        metadata = list(results.values())[0]
+    else:
+        # Aggregate results if multiple sources found
         from javinizer.aggregator import aggregate_metadata
-
         metadata = aggregate_metadata(results, settings.priority)
         console.print(f"[green]📦 Aggregated from {len(results)} sources[/]")
-    else:
-        # Use first available result
-        metadata = list(results.values())[0]
+
+    if metadata is None:
+        console.print(f"[red]Failed to aggregate metadata for {movie_id}[/]")
+        return
 
     console.print(f"[green]Found:[/] {metadata.title}")
 
@@ -164,12 +167,14 @@ def sort(
         console.print("[dim]Downloading images...[/]", end=" ")
 
         # Helper wrapper for coroutine
-        async def run_download():
-            return await downloader.download_cover_and_poster(
-                metadata.cover_url,
-                paths.backdrop_path,
-                paths.poster_path,
-            )
+        async def run_download() -> tuple[bool, bool]:
+            if metadata.cover_url and paths.backdrop_path and paths.poster_path:
+                return await downloader.download_cover_and_poster(
+                    metadata.cover_url,
+                    paths.backdrop_path,
+                    paths.poster_path,
+                )
+            return (False, False)
 
         backdrop_ok, poster_ok = asyncio.run(run_download())
 
@@ -219,7 +224,7 @@ def sort_dir(
     dry_run: bool,
     copy: bool,
     min_size: int,
-):
+) -> None:
     """Sort all video files in a directory.
 
     Example:

@@ -120,18 +120,19 @@ class JavlibraryScraper(BaseScraper):
         base_for_join = str(response.url)
 
         for link in soup.select(".video a[href*='?v=']"):
-            title = link.get("title", "")
+            title_attr = link.get("title", "")
+            title = str(title_attr) if title_attr else ""
             # Check if this result matches our ID
             if movie_id.upper() in title.upper():
                 href = link.get("href")
-                if href:
+                if href and isinstance(href, str):
                     return urljoin(base_for_join, href)
 
         # Get first result if no exact match
         first_result = soup.select_one(".video a[href*='?v=']")
         if first_result:
             href = first_result.get("href")
-            if href:
+            if href and isinstance(href, str):
                 return urljoin(base_for_join, href)
 
         return None
@@ -296,8 +297,9 @@ class JavlibraryScraper(BaseScraper):
         """Parse cover image URL, prioritizing high-quality awsimgsrc.dmm.co.jp domain"""
         cover_img = soup.select_one("#video_jacket_img")
         if cover_img:
-            src = cover_img.get("src")
-            if src:
+            src_attr = cover_img.get("src")
+            if src_attr and isinstance(src_attr, str):
+                src = src_attr
                 if src.startswith("//"):
                     src = f"https:{src}"
 
@@ -320,10 +322,10 @@ class JavlibraryScraper(BaseScraper):
         """Parse screenshot URLs"""
         urls = []
         for img in soup.select(".previewthumbs img"):
-            src = img.get("src")
-            if src and "pics.dmm" in src:
+            src_attr = img.get("src")
+            if src_attr and isinstance(src_attr, str) and "pics.dmm" in src_attr:
                 # Convert thumbnail to full size
-                full_url = src.replace("-", "jp-")
+                full_url = src_attr.replace("-", "jp-")
                 if full_url.startswith("//"):
                     full_url = f"https:{full_url}"
                 urls.append(full_url)
