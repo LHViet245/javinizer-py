@@ -7,7 +7,7 @@ import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Generator, Optional
 from contextlib import contextmanager
 
 from javinizer.models import MovieMetadata
@@ -112,8 +112,10 @@ class CacheManager:
         logger.debug(f"Cache initialized at {self.config.db_path}")
 
     @contextmanager
-    def _transaction(self):
+    def _transaction(self) -> Generator[sqlite3.Connection, None, None]:
         """Context manager for database transactions."""
+        if self._conn is None:
+            raise RuntimeError("Database connection not initialized")
         try:
             yield self._conn
             self._conn.commit()
@@ -300,7 +302,7 @@ class CacheManager:
 
         return count
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics.
 
         Returns:
@@ -353,7 +355,7 @@ class CacheManager:
     def __enter__(self) -> "CacheManager":
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()
 
 

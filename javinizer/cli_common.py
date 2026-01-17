@@ -1,6 +1,9 @@
 """Shared CLI utilities and constants"""
 
-from typing import Optional, Any
+from typing import Optional, Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from javinizer.models import Settings
 from rich.console import Console
 
 from javinizer.models import ProxyConfig
@@ -28,11 +31,11 @@ SCRAPERS = {
 
 # Add dmm_new if playwright is available
 if DMMNewScraper is not None:
-    SCRAPERS["dmm_new"] = DMMNewScraper
+    SCRAPERS["dmm_new"] = DMMNewScraper  # type: ignore[assignment]
 
 # Alias expansion: when user specifies "dmm", try dmm_new first then dmm
-SCRAPER_ALIASES = {
-    "dmm": ["dmm_new", "dmm"] if DMMNewScraper else ["dmm"],
+SCRAPER_ALIASES: dict[str, list[str]] = {
+    "dmm": ["dmm_new", "dmm"] if DMMNewScraper is not None else ["dmm"],
 }
 
 
@@ -56,7 +59,7 @@ def get_scraper(
     proxy: Optional[ProxyConfig] = None,
     cookies: Optional[dict[str, str]] = None,
     user_agent: Optional[str] = None,
-):
+) -> Any:
     """Get scraper instance by name"""
     name_lower = name.lower()
     scraper_class = SCRAPERS.get(name_lower)
@@ -79,8 +82,8 @@ def scrape_parallel(
     movie_id: str,
     sources: list[str],
     proxy_config: Optional[ProxyConfig],
-    settings,
-    console: Console,
+    settings: "Settings",
+    console: Optional[Console],
     max_workers: int = 4,
 ) -> dict[str, Any]:
     """
@@ -102,7 +105,7 @@ def scrape_parallel(
 
     results: dict[str, MovieMetadata] = {}
 
-    def scrape_source(src: str):
+    def scrape_source(src: str) -> tuple[str, Any]:
         scraper = get_scraper(
             src,
             proxy=proxy_config,
@@ -115,23 +118,28 @@ def scrape_parallel(
         )
 
         if scraper is None:
-            console.print(f"[yellow]⚠️  Unknown source: {src}[/]")
+            if console:
+                console.print(f"[yellow]⚠️  Unknown source: {src}[/]")
             return src, None
 
         with scraper:
             try:
                 # Use print() or logging but careful with console.print concurrency
                 # We'll just capture output or let rich handle basic thread safety
-                console.print(f"[dim]Scraping from {src}...[/]", end=" ")
+                if console:
+                    console.print(f"[dim]Scraping from {src}...[/]", end=" ")
                 metadata = scraper.find(movie_id)
                 if metadata:
-                    console.print(f"[green]✓ ({src})[/]")
+                    if console:
+                        console.print(f"[green]✓ ({src})[/]")
                     return src, metadata
                 else:
-                    console.print(f"[yellow]no results ({src})[/]")
+                    if console:
+                        console.print(f"[yellow]no results ({src})[/]")
                     return src, None
             except Exception as e:
-                console.print(f"[red]error ({src}): {e}[/]")
+                if console:
+                    console.print(f"[red]error ({src}): {e}[/]")
                 return src, None
 
     # Use ThreadPoolExecutor for I/O bound tasks
@@ -147,7 +155,7 @@ def scrape_parallel(
             sources_to_submit.remove("dmm_new")
             sources_to_submit.remove("dmm")
 
-        def scrape_dmm_chain():
+        def scrape_dmm_chain() -> tuple[str, Any]:
             """Try dmm_new, fallback to dmm on failure"""
             # Try dmm_new first
             src, meta = scrape_source("dmm_new")
@@ -178,6 +186,7 @@ def scrape_parallel(
                     if metadata:
                         results[result_src] = metadata
             except Exception as e:
-                console.print(f"[red]Exception in thread for {task_name}: {e}[/]")
+                if console:
+                    console.print(f"[red]Exception in thread for {task_name}: {e}[/]")
 
     return results

@@ -10,9 +10,9 @@ from .mgstage import MGStageScraper
 try:
     from .dmm_new import DMMNewScraper, is_playwright_available
 except ImportError:
-    DMMNewScraper = None
+    DMMNewScraper = None  # type: ignore[misc,assignment]
 
-    def is_playwright_available():
+    def is_playwright_available() -> bool:
         return False
 
 

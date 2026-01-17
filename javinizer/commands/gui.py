@@ -9,7 +9,7 @@ from javinizer.cli_common import console
 @click.option("--host", "-h", default="127.0.0.1", help="Host to bind to")
 @click.option("--port", "-p", default=8000, type=int, help="Port to bind to")
 @click.option("--reload", is_flag=True, help="Enable auto-reload for development")
-def gui(host: str, port: int, reload: bool):
+def gui(host: str, port: int, reload: bool) -> None:
     """Start the web GUI server
     
     Examples:

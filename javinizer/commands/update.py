@@ -27,7 +27,7 @@ def update(
     proxy: Optional[str],
     dry_run: bool,
     nfo_only: bool,
-):
+) -> None:
     """Update metadata for an already sorted folder.
 
     Re-scrapes metadata and refreshes NFO and images in-place.
@@ -181,7 +181,7 @@ def update_dir(
     recursive: bool,
     dry_run: bool,
     nfo_only: bool,
-):
+) -> None:
     """Update metadata for all sorted folders in a directory.
 
     Scans for folders containing .nfo files and re-scrapes metadata.

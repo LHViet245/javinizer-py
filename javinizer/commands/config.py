@@ -10,13 +10,13 @@ from javinizer.config import load_settings, save_settings, update_proxy, get_con
 
 
 @click.group()
-def config():
+def config() -> None:
     """Manage Javinizer configuration"""
     pass
 
 
 @config.command("show")
-def config_show():
+def config_show() -> None:
     """Show current configuration"""
     settings = load_settings()
     config_path = get_config_path()
@@ -46,7 +46,7 @@ def config_show():
 @config.command("set-proxy")
 @click.argument("proxy_url", required=False)
 @click.option("--disable", is_flag=True, help="Disable proxy")
-def config_set_proxy(proxy_url: Optional[str], disable: bool):
+def config_set_proxy(proxy_url: Optional[str], disable: bool) -> None:
     """Set proxy URL
 
     Examples:
@@ -79,7 +79,7 @@ def config_set_proxy(proxy_url: Optional[str], disable: bool):
 )
 def config_set_javlibrary_cookies(
     cf_clearance: str, cf_bm: Optional[str], user_agent: str
-):
+) -> None:
     """Set Javlibrary Cloudflare cookies for bypass
 
     You can get these cookies by:
@@ -119,7 +119,7 @@ def config_set_javlibrary_cookies(
     default=120,
     help="Timeout in seconds to wait for challenge (default: 120)",
 )
-def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
+def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int) -> None:
     """Automatically capture Javlibrary Cloudflare cookies using browser
 
     This command opens a Chrome window (using undetected-chromedriver),
@@ -226,7 +226,7 @@ def config_get_javlibrary_cookies(proxy: Optional[str], timeout: int):
 @click.option("--nfo", "nfo_fmt", help="NFO filename format template (default: <ID>)")
 def config_set_sort_format(
     folder: Optional[str], file_fmt: Optional[str], nfo_fmt: Optional[str]
-):
+) -> None:
     """Set sorting format templates.
 
     Placeholders: <ID>, <TITLE>, <STUDIO>, <YEAR>, <ACTORS>, <LABEL>

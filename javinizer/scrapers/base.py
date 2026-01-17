@@ -1,7 +1,7 @@
 """Base scraper abstract class"""
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Any, Optional
 import ssl
 
 import httpx
@@ -87,7 +87,7 @@ class BaseScraper(ABC):
         self.user_agent = user_agent or DEFAULT_USER_AGENT
         self.verify_ssl = verify_ssl
         self.rate_limiter = rate_limiter
-        self._client: Optional[httpx.Client] = None
+        self._client: Any = None  # httpx.Client or curl_cffi.Session
 
     def _get_proxy_url(self) -> Optional[str]:
         """Get proxy URL if configured"""
@@ -96,7 +96,7 @@ class BaseScraper(ABC):
         return None
 
     @property
-    def client(self):
+    def client(self) -> Any:
         """Lazy-initialized HTTP client"""
         if self._client is None:
             proxy_url = self._get_proxy_url()
@@ -139,22 +139,28 @@ class BaseScraper(ABC):
                 # Fallback to httpx (better SOCKS support)
                 import httpx
 
-                client_kwargs = {
-                    "timeout": self.timeout,
-                    "headers": {"User-Agent": self.user_agent},
-                    "follow_redirects": True,
-                    "cookies": self.cookies,
-                }
-                if proxy_url:
-                    client_kwargs["proxy"] = proxy_url
-                    client_kwargs["verify"] = self.verify_ssl
-                else:
-                    # Use legacy context only if SSL verification is disabled
-                    client_kwargs["verify"] = (
-                        True if self.verify_ssl else get_legacy_ssl_context()
-                    )
+                headers = {"User-Agent": self.user_agent}
+                verify_ctx: ssl.SSLContext | bool = (
+                    True if self.verify_ssl else get_legacy_ssl_context()
+                )
 
-                self._client = httpx.Client(**client_kwargs)
+                if proxy_url:
+                    self._client = httpx.Client(
+                        timeout=self.timeout,
+                        headers=headers,
+                        follow_redirects=True,
+                        cookies=self.cookies,
+                        proxy=proxy_url,
+                        verify=self.verify_ssl,
+                    )
+                else:
+                    self._client = httpx.Client(
+                        timeout=self.timeout,
+                        headers=headers,
+                        follow_redirects=True,
+                        cookies=self.cookies,
+                        verify=verify_ctx,
+                    )
 
         return self._client
 
@@ -167,7 +173,7 @@ class BaseScraper(ABC):
     def __enter__(self) -> "BaseScraper":
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()
 
     @abstractmethod

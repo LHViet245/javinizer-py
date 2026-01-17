@@ -7,7 +7,7 @@ NOTE: Requires Japan proxy to access. Configure proxy in settings.
 """
 
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 from urllib.parse import urljoin
 
@@ -226,7 +226,7 @@ class MGStageScraper(BaseScraper):
             return desc if desc else None
         return None
 
-    def _extract_date(self, html: str) -> Optional[datetime]:
+    def _extract_date(self, html: str) -> Optional[date]:
         """Extract release date"""
         # Pattern: 配信開始日: 2024/01/15
         match = re.search(
