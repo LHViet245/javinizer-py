@@ -1,7 +1,7 @@
 """Update commands module"""
 
 import asyncio
-from typing import Optional
+from typing import Optional, Any
 from pathlib import Path
 
 import click
@@ -15,32 +15,18 @@ from javinizer.nfo import generate_nfo
 from javinizer.cli_helpers import process_thumbnails, translate_metadata_if_enabled
 
 
-@click.command("update")
-@click.argument("folder", type=click.Path(exists=True))
-@click.option("--source", "-s", default="r18dev,dmm_new", help="Scraper sources")
-@click.option("--proxy", "-p", help="Proxy URL")
-@click.option("--dry-run", is_flag=True, help="Preview without changes")
-@click.option("--nfo-only", is_flag=True, help="Only update NFO, skip images")
-def update(
-    folder: str,
+def update_folder_task(
+    folder_path: Path,
     source: str,
-    proxy: Optional[str],
+    proxy_config: Optional[ProxyConfig],
+    settings: Any,
     dry_run: bool,
     nfo_only: bool,
-) -> None:
-    """Update metadata for an already sorted folder.
-
-    Re-scrapes metadata and refreshes NFO and images in-place.
-
-    Example:
-        javinizer update "D:/Movies/SDDE-761"
-        javinizer update "D:/Movies/SDDE-761" --nfo-only
-    """
-    folder_path = Path(folder).resolve()
-
+) -> bool:
+    """Standalone update logic for a single folder"""
     if not folder_path.is_dir():
         console.print(f"[red]Not a folder: {folder_path}[/]")
-        return
+        return False
 
     console.print(f"[bold cyan]Updating:[/] {folder_path.name}")
 
@@ -50,19 +36,9 @@ def update(
         console.print(
             f"[red]Could not extract movie ID from folder name: {folder_path.name}[/]"
         )
-        return
+        return False
 
     console.print(f"[cyan]Movie ID:[/] {movie_id}")
-
-    # Load settings
-    settings = load_settings()
-
-    # Setup proxy
-    proxy_config = None
-    if proxy:
-        proxy_config = ProxyConfig(enabled=True, url=proxy)
-    elif settings.proxy.enabled:
-        proxy_config = settings.proxy
 
     # Fetch metadata - expand aliases (dmm -> [dmm_new, dmm])
     sources = expand_sources([s.strip() for s in source.split(",")])
@@ -89,15 +65,15 @@ def update(
                 metadata = scraper.find(movie_id)
                 if metadata:
                     results[src] = metadata
-                    console.print("[green]OK[/]")
+                    console.print(f"[green]OK ({src})[/]")
                 else:
-                    console.print("[yellow]no results[/]")
+                    console.print(f"[yellow]no results ({src})[/]")
             except Exception as e:
-                console.print(f"[red]error: {e}[/]")
+                console.print(f"[red]error ({src}): {e}[/]")
 
     if not results:
         console.print(f"[red]Could not find metadata for {movie_id}[/]")
-        return
+        return False
 
     # Aggregate results if multiple sources found
     if len(results) > 1:
@@ -111,15 +87,16 @@ def update(
     console.print(f"[green]Found:[/] {metadata.title}")
 
     if dry_run:
-        console.print()
         console.print("[yellow]DRY RUN - No changes made[/]")
-        return
+        return True
 
     # Get sort settings for filenames
     sort_settings = settings.sort
 
     # Determine file paths in folder
-    nfo_path = folder_path / f"{sort_settings.nfo_format.replace('<ID>', movie_id)}.nfo"
+    nfo_path = (
+        folder_path / f"{sort_settings.nfo_format.replace('<ID>', movie_id)}.nfo"
+    )
     poster_path = folder_path / sort_settings.poster_filename
     backdrop_path = folder_path / sort_settings.backdrop_filename
 
@@ -160,9 +137,40 @@ def update(
     )
     nfo_path.write_text(nfo_content, encoding="utf-8")
     console.print(f"[green]NFO updated:[/] {nfo_path.name}")
-
-    console.print()
     console.print(f"[bold green]Done![/] Updated: {folder_path.name}")
+    return True
+
+
+@click.command("update")
+@click.argument("folder", type=click.Path(exists=True))
+@click.option("--source", "-s", default="r18dev,dmm_new", help="Scraper sources")
+@click.option("--proxy", "-p", help="Proxy URL")
+@click.option("--dry-run", is_flag=True, help="Preview without changes")
+@click.option("--nfo-only", is_flag=True, help="Only update NFO, skip images")
+def update(
+    folder: str,
+    source: str,
+    proxy: Optional[str],
+    dry_run: bool,
+    nfo_only: bool,
+) -> None:
+    """Update metadata for an already sorted folder.
+
+    Re-scrapes metadata and refreshes NFO and images in-place.
+
+    Example:
+        javinizer update "D:/Movies/SDDE-761"
+        javinizer update "D:/Movies/SDDE-761" --nfo-only
+    """
+    folder_path = Path(folder).resolve()
+    settings = load_settings()
+    proxy_config = None
+    if proxy:
+        proxy_config = ProxyConfig(enabled=True, url=proxy)
+    elif settings.proxy.enabled:
+        proxy_config = settings.proxy
+
+    update_folder_task(folder_path, source, proxy_config, settings, dry_run, nfo_only)
 
 
 @click.command("update-dir")
@@ -210,32 +218,46 @@ def update_dir(
     console.print()
 
     success_count = 0
-    skip_count = 0
     error_count = 0
 
-    for folder in folders:
-        # Check if we can extract movie ID
-        movie_id = extract_movie_id(folder.name)
-        if not movie_id:
-            console.print(f"[yellow]Skipping:[/] {folder.name} (no movie ID)")
-            skip_count += 1
-            continue
+    # Load settings once
+    settings = load_settings()
+    proxy_config = None
+    if proxy:
+        proxy_config = ProxyConfig(enabled=True, url=proxy)
+    elif settings.proxy.enabled:
+        proxy_config = settings.proxy
 
-        try:
-            # Call update_folder via context
-            ctx = click.Context(update)
-            ctx.invoke(
-                update,
-                folder=str(folder),
-                source=source,
-                proxy=proxy,
-                dry_run=dry_run,
-                nfo_only=nfo_only,
-            )
-            success_count += 1
-        except Exception as e:
-            console.print(f"[red]Error updating {folder.name}: {e}[/]")
-            error_count += 1
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    # Parallel processing with ThreadPoolExecutor
+    # Use max 4 workers to avoid rate limits
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(
+                update_folder_task,
+                folder,
+                source,
+                proxy_config,
+                settings,
+                dry_run,
+                nfo_only,
+            ): folder
+            for folder in folders
+        }
+
+        for future in as_completed(futures):
+            folder_arg = futures[future]
+            try:
+                success = future.result()
+                if success:
+                    success_count += 1
+                else:
+                    error_count += 1  # Logic failure (no ID, no results) counted as error or skip?
+                    # The update_folder_task returns False on known failures, we can adjust counters
+            except Exception as e:
+                console.print(f"[red]Error updating {folder_arg.name}: {e}[/]")
+                error_count += 1
 
     console.print()
     console.print("[bold]Summary:[/]")

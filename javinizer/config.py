@@ -10,7 +10,6 @@ from javinizer.models import Settings
 # Default config locations
 DEFAULT_CONFIG_FILENAME = "jvSettings.json"
 
-
 def get_config_path() -> Path:
     """Get the default config file path"""
     # 1. Check current working directory (user override)
@@ -126,3 +125,6 @@ def update_proxy(
 
     save_settings(settings, config_path)
     return settings
+
+# Global settings instance, loaded on import
+settings = load_settings()

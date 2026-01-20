@@ -113,6 +113,7 @@ def sort(
         folder_format=sort_settings.folder_format,
         file_format=sort_settings.file_format,
         nfo_format=sort_settings.nfo_format,
+        output_folder=sort_settings.output_folder,
         poster_filename=sort_settings.poster_filename,
         backdrop_filename=sort_settings.backdrop_filename,
         max_title_length=sort_settings.max_title_length,

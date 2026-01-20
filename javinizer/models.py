@@ -132,6 +132,9 @@ class SortSettings(BaseModel):
     file_format: str = "<TITLE> (<YEAR>) [<ID>]"
     nfo_format: str = "<TITLE> (<YEAR>) [<ID>]"
 
+    # Multi-level output folder (e.g., ["<ACTORS>", "<YEAR>"])
+    output_folder: list[str] = Field(default_factory=list)
+
     # Image filenames (Jellyfin standard)
     poster_filename: str = "cover.jpg"
     backdrop_filename: str = "backdrop.jpg"

@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Any, Optional, TYPE_CHECKING, cast
+from typing import Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from javinizer.scrapers.base import BaseScraper

@@ -1,0 +1,171 @@
+<!-- View Toggle & Container -->
+<div x-data="{ viewMode: 'grid' }">
+    <!-- Toggle Buttons -->
+    <div class="flex items-center justify-between mb-4">
+        <span class="text-xs text-white/50">
+            {% if items %}{{ items|length }} items{% else %}No items{% endif %}
+        </span>
+        <div class="flex gap-1 bg-white/5 rounded-lg p-1">
+            <button @click="viewMode = 'grid'"
+                :class="viewMode === 'grid' ? 'bg-cyan-500/20 text-cyan-400' : 'text-white/40 hover:text-white/60'"
+                class="p-2 rounded transition-all" title="Grid View">
+                <i data-lucide="grid-3x3" class="w-4 h-4"></i>
+            </button>
+            <button @click="viewMode = 'table'"
+                :class="viewMode === 'table' ? 'bg-cyan-500/20 text-cyan-400' : 'text-white/40 hover:text-white/60'"
+                class="p-2 rounded transition-all" title="Table View">
+                <i data-lucide="list" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Grid View -->
+    <div x-show="viewMode === 'grid'" x-transition
+        class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 animate-fade-in">
+        {% for item in items %}
+        <div class="glass-card rounded-lg overflow-hidden group cursor-pointer relative" x-data="{ 
+                path: '{{ item.path | replace('\\', '\\\\') }}',
+                get isSelected() { return selectedItems.includes(this.path) },
+                toggle() {
+                    if (this.isSelected) {
+                        selectedItems = selectedItems.filter(p => p !== this.path);
+                    } else {
+                        selectedItems.push(this.path);
+                    }
+                }
+             }" :class="{ 'ring-2 ring-cyan-500/50 bg-cyan-500/5': isSelected }"
+            @click.self="selectedPath = path; toggle()"
+            @select-all.window="if (!selectedItems.includes(path)) selectedItems.push(path)"
+            @deselect-all.window="selectedItems = selectedItems.filter(p => p !== path)">
+
+            <!-- Selection Checkbox -->
+            <div class="absolute top-2 left-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+                :class="{ 'opacity-100': isSelected }">
+                <input type="checkbox" :checked="isSelected" @click.stop="toggle()"
+                    class="w-4 h-4 rounded border-white/10 bg-black/40 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 transition-all">
+            </div>
+
+            <div @click="selectedPath = path; htmx.ajax('GET', '/api/fs/inspector_fragment?path=' + encodeURIComponent(path), '#inspector-panel')"
+                @dblclick="{% if item.type == 'directory' %}htmx.ajax('GET', '/api/fs/grid_fragment?path=' + encodeURIComponent(path), '#main-grid'){% endif %}">
+                <!-- Thumbnail -->
+                <div class="aspect-[2/3] bg-black/40 relative overflow-hidden">
+                    {% if item.type == 'directory' %}
+                    <div class="absolute inset-0 flex items-center justify-center text-white/20">
+                        <i data-lucide="folder" class="w-12 h-12 opacity-40"></i>
+                    </div>
+                    {% else %}
+                    <div class="absolute inset-0 flex items-center justify-center text-white/20">
+                        <i data-lucide="file-video" class="w-12 h-12 opacity-40"></i>
+                    </div>
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    </div>
+                    {% endif %}
+
+                    <!-- Type Badge -->
+                    <div
+                        class="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-bold tracking-tighter uppercase bg-black/60 text-white/60">
+                        {{ item.type }}
+                    </div>
+                </div>
+
+                <!-- Info -->
+                <div class="p-3">
+                    <h3 class="text-xs font-medium text-white/90 truncate mb-1" title="{{ item.name }}">
+                        {{ item.name }}
+                    </h3>
+                    <p class="text-[10px] text-white/40">
+                        {% if item.size %}
+                        {{ (item.size / (1024*1024)) | round(2) }} MB
+                        {% else %}
+                        &nbsp;
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Table View -->
+    <div x-show="viewMode === 'table'" x-transition class="animate-fade-in">
+        <table class="w-full text-xs">
+            <thead>
+                <tr class="border-b border-white/10 text-white/50 text-left">
+                    <th class="pb-2 pl-2 w-8"></th>
+                    <th class="pb-2 w-8"></th>
+                    <th class="pb-2">Name</th>
+                    <th class="pb-2 w-24 text-right">Size</th>
+                    <th class="pb-2 w-20 text-center">Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr class="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors group" x-data="{ 
+                        path: '{{ item.path | replace('\\', '\\\\') }}',
+                        get isSelected() { return selectedItems.includes(this.path) },
+                        toggle() {
+                            if (this.isSelected) {
+                                selectedItems = selectedItems.filter(p => p !== this.path);
+                            } else {
+                                selectedItems.push(this.path);
+                            }
+                        }
+                    }" :class="{ 'bg-cyan-500/10': isSelected }"
+                    @click="selectedPath = path; htmx.ajax('GET', '/api/fs/inspector_fragment?path=' + encodeURIComponent(path), '#inspector-panel')"
+                    @select-all.window="if (!selectedItems.includes(path)) selectedItems.push(path)"
+                    @deselect-all.window="selectedItems = selectedItems.filter(p => p !== path)">
+
+                    <!-- Checkbox -->
+                    <td class="py-2 pl-2">
+                        <input type="checkbox" :checked="isSelected" @click.stop="toggle()"
+                            class="w-3.5 h-3.5 rounded border-white/10 bg-black/40 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            :class="{ 'opacity-100': isSelected }">
+                    </td>
+
+                    <!-- Icon -->
+                    <td class="py-2">
+                        {% if item.type == 'directory' %}
+                        <i data-lucide="folder" class="w-4 h-4 text-yellow-500/60"></i>
+                        {% else %}
+                        <i data-lucide="file-video" class="w-4 h-4 text-cyan-500/60"></i>
+                        {% endif %}
+                    </td>
+
+                    <!-- Name -->
+                    <td class="py-2 text-white/80 truncate max-w-[200px]" title="{{ item.name }}">
+                        {{ item.name }}
+                    </td>
+
+                    <!-- Size -->
+                    <td class="py-2 text-right text-white/40">
+                        {% if item.size %}
+                        {{ (item.size / (1024*1024)) | round(2) }} MB
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+
+                    <!-- Type -->
+                    <td class="py-2 text-center">
+                        <span class="px-2 py-0.5 rounded text-[10px] uppercase bg-white/5 text-white/50">
+                            {{ item.type }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if not items %}
+    <div class="text-center py-12 text-white/30">
+        <i data-lucide="folder-open" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+        <p class="text-sm">No files in this directory</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    lucide.createIcons();
+</script>

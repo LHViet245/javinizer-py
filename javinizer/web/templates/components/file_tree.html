@@ -1,0 +1,55 @@
+{# Recursive component for File Tree #}
+{% for item in items %}
+<div class="pl-2">
+    {% if item.type == 'directory' or item.type == 'drive' %}
+    <!-- Directory Item -->
+    <div class="group">
+        <div class="py-1 px-2 text-sm text-white/70 hover:bg-white/5 hover:text-white rounded cursor-pointer flex items-center gap-2 transition-colors select-none"
+            hx-get="/api/fs/tree_fragment?path={{ item.path | urlencode }}"
+            hx-target="#children-{{ item.name | replace(' ', '-') | replace(':', '') }}-{{ loop.index }}"
+            hx-swap="innerHTML"
+            @click="expanded = !expanded; $dispatch('folder-selected', { path: '{{ item.path | replace('\\', '\\\\') }}' })"
+            x-data="{ expanded: false }" hx-indicator="#main-grid"
+            hx-get-grid="/api/fs/grid_fragment?path={{ item.path | urlencode }}"
+            hx-trigger="click[this.getAttribute('hx-get-grid')] consume" hx-target-grid="#main-grid">
+
+            <!-- Icon Toggle -->
+            <i data-lucide="chevron-right" class="w-3 h-3 transition-transform duration-200"
+                :class="expanded ? 'rotate-90' : ''"></i>
+
+            <i data-lucide="folder" class="w-4 h-4 text-purple-400 group-hover:text-cyan-400 transition-colors"></i>
+
+            <span class="truncate">{{ item.name }}</span>
+        </div>
+
+        <!-- Add a hidden trigger for the grid loading since hx-get is already used for tree expansion -->
+        <!-- Actually, HTMX supports multiple swaps with extensions or we can use Alpine to trigger it -->
+        <div hx-get="/api/fs/grid_fragment?path={{ item.path | urlencode }}" hx-trigger="click from:previous .py-1"
+            hx-target="#main-grid" hx-swap="innerHTML"></div>
+
+        <!-- Children Container (Lazy Loaded) -->
+        <div id="children-{{ item.name | replace(' ', '-') | replace(':', '') }}-{{ loop.index }}"
+            class="border-l border-white/5 ml-3" x-show="expanded" x-collapse>
+        </div>
+    </div>
+    {% else %}
+    <!-- File Item -->
+    <div class="py-1 px-2 text-sm text-white/60 hover:bg-white/10 hover:text-white rounded cursor-pointer flex items-center gap-2 ml-4 select-none"
+        hx-get="/api/fs/inspector_fragment?path={{ item.path | urlencode }}" hx-target="#inspector-panel"
+        hx-swap="innerHTML"
+        @click="$dispatch('file-selected', { path: '{{ item.path | replace('\\', '\\\\') }}', name: '{{ item.name }}' })"
+        :class="selectedPath === '{{ item.path | replace('\\', '\\\\') }}' ? 'bg-white/10 text-cyan-400' : ''">
+
+        <i data-lucide="file-video" class="w-4 h-4 opacity-50"></i>
+        <span class="truncate">{{ item.name }}</span>
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+
+<script>
+    // Re-initialize icons for newly added content
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+</script>

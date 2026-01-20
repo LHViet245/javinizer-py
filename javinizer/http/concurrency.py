@@ -2,7 +2,7 @@
 """Concurrency control for HTTP requests and downloads"""
 
 import asyncio
-from typing import Any, AsyncIterator, Optional
+from typing import AsyncIterator, Optional
 from contextlib import asynccontextmanager
 
 from javinizer.logger import get_logger

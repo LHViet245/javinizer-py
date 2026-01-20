@@ -1,6 +1,7 @@
 """Thumbnail commands module"""
 
 import click
+from pathlib import Path
 from rich.table import Table
 
 from typing import Optional, TYPE_CHECKING
@@ -71,8 +72,14 @@ def thumbs_update(force: bool) -> None:
         async def process(profile: "ActressProfile") -> None:
             async with sem:
                 if force and profile.local_path:
-                    # TODO: Implement force logic cleanly
-                    pass
+                    path = Path(profile.local_path)
+                    if path.exists():
+                        try:
+                            path.unlink()
+                            # Reset local_path in profile object so get_local_path re-downloads
+                            profile.local_path = None
+                        except OSError as e:
+                            console.print(f"[red]Failed to delete {path}: {e}[/]")
                 await db.get_local_path(profile)
 
         with console.status("[bold green]Updating thumbnails...[/]"):

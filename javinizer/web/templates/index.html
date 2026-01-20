@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Left Sidebar: File Explorer -->
+<aside class="w-72 glass-panel rounded-xl flex flex-col overflow-hidden animate-fade-in-left"
+    @folder-selected.window="selectedPath = $event.detail.path; selectedItems = []">
+    <div class="p-4 border-b border-white/5 flex justify-between items-center">
+        <h2 class="font-medium text-sm text-white/80">EXPLORER</h2>
+        <button class="p-1 hover:bg-white/10 rounded transition-colors" title="Scan Recursive">
+            <i data-lucide="folder-search" class="w-4 h-4 opacity-60"></i>
+        </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-2" id="file-tree" @file-selected.window="selectedPath = $event.detail.path">
+        {% with items=roots %}
+        {% include "components/file_tree.html" %}
+        {% endwith %}
+    </div>
+</aside>
+
+<!-- Center: Main Grid -->
+<section class="flex-1 glass-panel rounded-xl flex flex-col overflow-hidden relative" x-data="{ 
+        selectAll: false,
+        toggleAll() {
+            if (this.selectAll) {
+                $dispatch('select-all');
+            } else {
+                $dispatch('deselect-all');
+            }
+        },
+        async triggerJob(detail) {
+            const { type, items } = detail;
+            const targetPaths = items && items.length ? items : (this.selectedPath ? [this.selectedPath] : []);
+            
+            if (!targetPaths.length) {
+                showToast('Please select items or a folder first', 'warning');
+                return;
+            }
+
+            const endpoint = `/api/ops/batch/${type}`;
+            const payload = {
+                paths: targetPaths,
+                dry_run: false
+            };
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.job_id) {
+                    showToast(`Job started: ${type.toUpperCase()}`, 'success');
+                    document.getElementById('terminal-log')?.classList.remove('hidden');
+                } else {
+                    showToast(data.error || 'Failed to start job', 'error');
+                }
+            } catch (e) {
+                showToast('Network error: ' + e.message, 'error');
+            }
+        }
+    }" @job-start.window="triggerJob($event.detail)">
+    <!-- Toolbar -->
+    <div class="h-12 border-b border-white/5 flex items-center justify-between px-4 bg-black/10">
+        <div class="flex items-center gap-2">
+            <button class="p-1.5 bg-white/10 rounded text-white/90 hover:bg-white/20 transition">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i>
+            </button>
+            <button class="p-1.5 rounded text-white/40 hover:bg-white/10 transition">
+                <i data-lucide="list" class="w-4 h-4"></i>
+            </button>
+
+            <div class="h-4 w-px bg-white/10 mx-2"></div>
+
+            <!-- Bulk Actions Integration -->
+            {% include "components/action_toolbar.html" %}
+        </div>
+
+        <div class="flex items-center gap-2">
+            <div class="relative" x-data="{ q: '' }">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-white/30"></i>
+                <input type="text" name="q" placeholder="Filter..." x-model="q"
+                    class="bg-black/20 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-cyan-500/50 w-48 transition-all focus:w-64"
+                    hx-get="/api/fs/grid_fragment" hx-target="#main-grid" hx-trigger="keyup changed delay:300ms"
+                    :hx-vals="JSON.stringify({path: selectedPath})">
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid Content -->
+    <div class="flex-1 overflow-y-auto p-6" id="main-grid">
+        <div class="flex flex-col items-center justify-center h-full text-white/30 animate-pulse">
+            <i data-lucide="layers" class="w-16 h-16 mb-4 opacity-10"></i>
+            <p class="text-sm tracking-widest uppercase">Select a folder to begin</p>
+        </div>
+    </div>
+
+    <!-- Terminal Component -->
+    {% include "components/terminal_log.html" %}
+</section>
+
+<!-- Right: Inspector -->
+<aside class="w-80 glass-panel rounded-xl flex flex-col overflow-hidden hidden xl:flex" id="inspector-panel">
+    <div class="h-56 bg-black/40 relative group">
+        <!-- Backdrop Image Placeholder -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-white/20 bg-white/5">
+            <span class="text-xs">Select Item</span>
+        </div>
+    </div>
+
+    <div class="flex-1 p-6 flex flex-col items-center justify-center text-white/20 text-center space-y-4">
+        <i data-lucide="info" class="w-12 h-12 opacity-10"></i>
+        <p class="text-xs uppercase tracking-widest">Select an item to view metadata</p>
+    </div>
+
+    <!-- Actions -->
+    <div class="p-4 border-t border-white/5 bg-black/20">
+        <button class="w-full py-2 bg-white/5 text-white/40 rounded-lg text-sm font-medium cursor-not-allowed">
+            Apply Changes
+        </button>
+    </div>
+</aside>
+{% endblock %}
