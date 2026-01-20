@@ -2,7 +2,7 @@
 """Concurrency control for HTTP requests and downloads"""
 
 import asyncio
-from typing import Optional
+from typing import AsyncIterator, Optional
 from contextlib import asynccontextmanager
 
 from javinizer.logger import get_logger
@@ -49,7 +49,7 @@ class ConcurrencyLimiter:
         return self._semaphore
 
     @asynccontextmanager
-    async def acquire(self):
+    async def acquire(self) -> AsyncIterator[None]:
         """Acquire a slot for concurrent operation.
 
         Blocks if max_concurrent limit is reached.
@@ -127,11 +127,11 @@ class SyncConcurrencyLimiter:
             self._active_count -= 1
         self._semaphore.release()
 
-    def __enter__(self):
+    def __enter__(self) -> "SyncConcurrencyLimiter":
         self.acquire()
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: object) -> None:
         self.release()
 
     @property
@@ -166,7 +166,7 @@ def get_sync_limiter(max_concurrent: int = 5) -> SyncConcurrencyLimiter:
     return _sync_limiter
 
 
-def configure_concurrency(max_concurrent: int = 5) -> tuple:
+def configure_concurrency(max_concurrent: int = 5) -> tuple[ConcurrencyLimiter, SyncConcurrencyLimiter]:
     """Configure global concurrency limiters.
 
     Args:

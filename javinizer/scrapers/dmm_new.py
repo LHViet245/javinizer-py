@@ -10,7 +10,7 @@ Installation:
 
 import re
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from javinizer.models import Actress, MovieMetadata, ProxyConfig
 from javinizer.logger import get_logger
@@ -48,16 +48,16 @@ class DMMNewScraper:
         self.timeout = timeout
         self.proxy = proxy
         self.headless = headless
-        self._browser = None
-        self._playwright = None
+        self._browser: Optional[Any] = None
+        self._playwright: Optional[Any] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "DMMNewScraper":
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: object) -> None:
         self.close()
 
-    def close(self):
+    def close(self) -> None:
         """Close browser and playwright"""
         if self._browser:
             self._browser.close()
@@ -66,7 +66,7 @@ class DMMNewScraper:
             self._playwright.stop()
             self._playwright = None
 
-    def _get_browser(self):
+    def _get_browser(self) -> Any:
         """Lazily initialize Playwright browser
 
         Tries to use system Chrome first, falls back to Chromium if available.
@@ -83,7 +83,7 @@ class DMMNewScraper:
             self._playwright = sync_playwright().start()
 
             # Setup proxy if configured
-            proxy_config = None
+            proxy_config: Any = None
             if self.proxy and self.proxy.enabled and self.proxy.url:
                 proxy_config = {"server": self.proxy.url}
 
@@ -254,7 +254,7 @@ class DMMNewScraper:
         finally:
             page.close()
 
-    def _is_404(self, page) -> bool:
+    def _is_404(self, page: Any) -> bool:
         """Check if page is 404 Not Found"""
         try:
             # Check title
@@ -277,7 +277,7 @@ class DMMNewScraper:
         except Exception:
             return False
 
-    def _extract_metadata(self, page, url: str) -> Optional[MovieMetadata]:
+    def _extract_metadata(self, page: Any, url: str) -> Optional[MovieMetadata]:
         """Extract metadata from rendered page"""
         try:
             # Check 404 (redundant but safe)
@@ -285,8 +285,8 @@ class DMMNewScraper:
                 return None
 
             # Extract content ID from URL
-            content_id = re.search(r"id=([^&]+)", url)
-            content_id = content_id.group(1) if content_id else ""
+            content_id_match = re.search(r"id=([^&]+)", url)
+            content_id = content_id_match.group(1) if content_id_match else ""
 
             # Convert content ID to display ID
             movie_id = self._content_id_to_movie_id(content_id)

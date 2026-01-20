@@ -1,0 +1,38 @@
+<div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none" x-data="{ 
+        toasts: [],
+        add(message, type = 'info') {
+            const id = Date.now();
+            this.toasts.push({ id, message, type });
+            setTimeout(() => this.remove(id), 5000);
+        },
+        remove(id) {
+            this.toasts = this.toasts.filter(t => t.id !== id);
+        }
+     }" @toast.window="add($event.detail.message, $event.detail.type)">
+
+    <template x-for="toast in toasts" :key="toast.id">
+        <div x-transition:enter="transition ease-out duration-300 transform translate-x-full"
+            x-transition:enter-start="opacity-0 translate-x-full" x-transition:enter-end="opacity-100 translate-x-0"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-x-0"
+            x-transition:leave-end="opacity-0 translate-x-full"
+            class="pointer-events-auto px-4 py-3 rounded-lg border shadow-xl backdrop-blur-md flex items-center gap-3 min-w-[300px]"
+            :class="{
+                'bg-cyan-500/10 border-cyan-500/30 text-cyan-400': toast.type === 'info' || toast.type === 'success',
+                'bg-red-500/10 border-red-500/30 text-red-400': toast.type === 'error',
+                'bg-yellow-500/10 border-yellow-500/30 text-yellow-400': toast.type === 'warning'
+             }">
+            <i :data-lucide="toast.type === 'error' ? 'alert-circle' : 'check-circle'" class="w-5 h-5"></i>
+            <span class="text-sm font-medium" x-text="toast.message"></span>
+            <button @click="remove(toast.id)" class="ml-auto p-1 hover:bg-white/5 rounded">
+                <i data-lucide="x" class="w-4 h-4 opacity-50"></i>
+            </button>
+        </div>
+    </template>
+</div>
+
+<script>
+    // Global toast function for easier use from standard JS
+    window.showToast = (message, type = 'info') => {
+        window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
+    };
+</script>

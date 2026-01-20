@@ -50,8 +50,9 @@ cover/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# VS Code
+# IDE
 .vscode/
+.agent/
 
 # Javinizer Specific
 # ------------------
@@ -65,9 +66,21 @@ thumbs/
 javinizer.log
 *.log
 
+# Cache directories
+.mypy_cache/
+.ruff_cache/
+
+# Debug files
+error.txt
+*_debug.html
+write_test.txt
+
 # OS Specific
 .DS_Store
 Thumbs.db
 
 # Secrets
 .env
+
+# AI Context Memory (local session state)
+.brain/

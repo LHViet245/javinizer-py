@@ -1,8 +1,8 @@
 """DMM/Fanza scraper for Japanese metadata"""
 
 import re
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime
+from typing import Any, Optional
 from urllib.parse import quote
 
 from bs4 import BeautifulSoup, Tag
@@ -50,7 +50,7 @@ class DMMScraper(BaseScraper):
         )
 
     @property
-    def client(self):
+    def client(self) -> Any:
         """Override client to use Japanese Accept-Language for DMM"""
         client = super().client
         # DMM requires Japanese language header
@@ -213,7 +213,7 @@ class DMMScraper(BaseScraper):
                     return desc[:2000]  # Limit to reasonable length
         return None
 
-    def _parse_release_date(self, html: str) -> Optional[datetime]:
+    def _parse_release_date(self, html: str) -> Optional[date]:
         """Parse release date"""
         match = re.search(r"(\d{4})/(\d{2})/(\d{2})", html)
         if match:

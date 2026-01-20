@@ -1,21 +1,26 @@
 """Thumbnail commands module"""
 
 import click
+from pathlib import Path
 from rich.table import Table
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from javinizer.thumbs import ActressProfile
+
 from javinizer.cli_common import console
 
 
 @click.group()
-def thumbs():
+def thumbs() -> None:
     """Manage Thumbnail Database"""
     pass
 
 
 @thumbs.command("list")
 @click.option("--filter", "-f", help="Filter by name")
-def thumbs_list(filter: Optional[str]):
+def thumbs_list(filter: Optional[str]) -> None:
     """List actresses in database"""
     from javinizer.thumbs import ActressDB
 
@@ -52,7 +57,7 @@ def thumbs_list(filter: Optional[str]):
 
 @thumbs.command("update")
 @click.option("--force", is_flag=True, help="Re-download existing images")
-def thumbs_update(force: bool):
+def thumbs_update(force: bool) -> None:
     """Update thumbnail database images (Bulk Download)"""
     from javinizer.thumbs import ActressDB
     import asyncio
@@ -60,15 +65,21 @@ def thumbs_update(force: bool):
     db = ActressDB()
     console.print(f"[cyan]Loaded DB with {len(db.profiles)} actresses[/]")
 
-    async def run_update():
+    async def run_update() -> None:
         # tasks = []
         sem = asyncio.Semaphore(5)  # Limit concurrency
 
-        async def process(profile):
+        async def process(profile: "ActressProfile") -> None:
             async with sem:
                 if force and profile.local_path:
-                    # TODO: Implement force logic cleanly
-                    pass
+                    path = Path(profile.local_path)
+                    if path.exists():
+                        try:
+                            path.unlink()
+                            # Reset local_path in profile object so get_local_path re-downloads
+                            profile.local_path = None
+                        except OSError as e:
+                            console.print(f"[red]Failed to delete {path}: {e}[/]")
                 await db.get_local_path(profile)
 
         with console.status("[bold green]Updating thumbnails...[/]"):

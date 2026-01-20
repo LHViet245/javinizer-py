@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Javinizer Web Station{% endblock %}</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (Dev Mode via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00d2ff',
+                        secondary: '#9d50bb',
+                        dark: {
+                            900: '#0f0c29',
+                            800: '#302b63',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/liquid.css">
+
+    {% block head %}{% endblock %}
+</head>
+
+<body class="h-screen flex flex-col text-white" x-data="{ selectedPath: '', selectedItems: [] }">
+
+    <!-- Top Navigation -->
+    <nav
+        class="h-14 glass-panel border-b-0 border-x-0 mx-4 mt-2 rounded-xl flex items-center justify-between px-6 z-50">
+        <div class="flex items-center gap-2">
+            <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500">
+                JAVINIZER
+            </span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">BETA</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <button
+                class="flex items-center gap-2 px-4 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-semibold transition-all shadow-lg shadow-cyan-500/20 active:scale-95"
+                @click="$dispatch('job-start', {type: 'sort', items: selectedItems})">
+                <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                START PROCESSING
+            </button>
+            <button class="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <i data-lucide="settings" class="w-5 h-5 opacity-70"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex gap-4 p-4 overflow-hidden">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bottom Log Panel (Placeholder) -->
+    <footer class="glass-panel mx-4 mb-2 rounded-xl h-48 hidden" id="log-panel">
+        <div class="p-2 border-b border-white/5 flex justify-between items-center bg-black/20">
+            <span class="text-xs font-mono text-green-400">$ TERMINAL_OUTPUT</span>
+            <button class="text-white/40 hover:text-white"
+                onclick="document.getElementById('log-panel').classList.toggle('hidden')">
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <div class="p-4 font-mono text-xs text-white/70 h-full overflow-y-auto" id="log-stream">
+            <!-- Logs via SSE -->
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+    </script>
+    {% include "components/notifications.html" %}
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

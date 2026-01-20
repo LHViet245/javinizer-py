@@ -23,7 +23,7 @@ class ActressProfile:
 
 
 class ActressDB:
-    def __init__(self):
+    def __init__(self) -> None:
         self.settings = load_settings()
         self.thumbs_config = self.settings.thumbs
 
@@ -47,7 +47,7 @@ class ActressDB:
         self.alias_map: dict[str, str] = {}  # Alias -> Canonical Name
         self._load()
 
-    def _load(self):
+    def _load(self) -> None:
         """Load database from CSV"""
         if not self.csv_path.exists():
             return
@@ -94,7 +94,7 @@ class ActressDB:
         except Exception as e:
             console.print(f"[red]Error loading actress DB: {e}[/]")
 
-    def save(self):
+    def save(self) -> None:
         """Save database to CSV"""
         fieldnames = ["name", "aliases", "image_url", "local_path"]
 
@@ -141,7 +141,7 @@ class ActressDB:
         return None
 
     def add_or_update(
-        self, name: str, image_url: str = None, alias: str = None
+        self, name: str, image_url: Optional[str] = None, alias: Optional[str] = None
     ) -> ActressProfile:
         """Add new actress or update existing"""
         profile = self.find(name)
@@ -252,7 +252,7 @@ class ActressDB:
             )
             return False
 
-    async def process_metadata(self, metadata: MovieMetadata):
+    async def process_metadata(self, metadata: MovieMetadata) -> None:
         """
         Process metadata to build/update actress DB.
         Downloads thumbnails locally for caching but does NOT modify
@@ -270,10 +270,10 @@ class ActressDB:
                     alias=actress.full_name if actress.japanese_name else None,
                 )
             else:
-                profile = self.find(actress.japanese_name or actress.full_name)
-
-            if not profile:
-                continue
+                found = self.find(actress.japanese_name or actress.full_name)
+                if found is None:
+                    continue
+                profile = found
 
             # 2. Download to local cache (but don't modify metadata)
             # This keeps a local backup without affecting NFO portability

@@ -2,7 +2,7 @@
 
 from xml.etree import ElementTree as ET
 from xml.dom import minidom
-from typing import Optional
+from typing import Any, Optional
 
 from javinizer.models import MovieMetadata
 
@@ -165,7 +165,7 @@ def _prettify(elem: ET.Element) -> str:
     return "\n".join(result)
 
 
-def save_nfo(metadata: MovieMetadata, filepath: str, **kwargs) -> None:
+def save_nfo(metadata: MovieMetadata, filepath: str, **kwargs: Any) -> None:
     """Save NFO XML to file"""
     content = generate_nfo(metadata, **kwargs)
     with open(filepath, "w", encoding="utf-8") as f:
